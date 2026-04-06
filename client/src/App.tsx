@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { OAuthCallback } from './pages/OAuthCallback';
+import { NewIncident } from './pages/NewIncident';
 import { Navbar } from './components/Navbar';
 import './App.css';
 
@@ -28,9 +29,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="app-container">
+        <div className="min-h-screen">
           <Navbar />
-          <main className="main-content">
+          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<Login />} />
@@ -44,6 +45,14 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+                <Route
+                  path="/incidents/new"
+                  element={
+                    <ProtectedRoute>
+                      <NewIncident />
+                    </ProtectedRoute>
+                  }
+                />
             </Routes>
           </main>
         </div>

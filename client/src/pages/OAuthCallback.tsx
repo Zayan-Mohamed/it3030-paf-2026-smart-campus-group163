@@ -6,7 +6,7 @@ export const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const token = searchParams.get('token');
   const errorParam = searchParams.get('error');
   const processed = useRef(false);

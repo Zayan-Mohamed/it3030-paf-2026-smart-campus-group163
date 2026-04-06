@@ -12,6 +12,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Incident entity representing maintenance tickets for campus facilities.
@@ -19,36 +21,27 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "incidents", indexes = {
-    @Index(name = "idx_incident_reporter", columnList = "reporter_id"),
-    @Index(name = "idx_incident_facility", columnList = "facility_id"),
-    @Index(name = "idx_incident_status", columnList = "status"),
-    @Index(name = "idx_incident_priority", columnList = "priority")
+        @Index(name = "idx_incident_reporter", columnList = "reporter_id"),
+        @Index(name = "idx_incident_status", columnList = "status"),
+        @Index(name = "idx_incident_priority", columnList = "priority")
 })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Incident {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    /**
-     * Title/summary of the incident
-     */
-    @Column(nullable = false)
-    @NotBlank(message = "Title is required")
-    @Size(max = 200, message = "Title must not exceed 200 characters")
-    private String title;
-    
+
     /**
      * Detailed description of the incident
      */
     @Column(columnDefinition = "TEXT", nullable = false)
     @NotBlank(message = "Description is required")
     private String description;
-    
+
     /**
      * User who reported the incident
      */
@@ -56,19 +49,15 @@ public class Incident {
     @JoinColumn(name = "reporter_id", nullable = false)
     @NotNull(message = "Reporter is required")
     private User reporter;
-    
+
     /**
-     * Facility where the incident occurred
+     * Resource/location where the incident occurred
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "facility_id")
-    private Facility facility;
-    
-    /**
-     * Location of the incident (if not tied to a specific facility)
-     */
-    private String location;
-    
+    @Column(name = "resource_location")
+    @NotBlank(message = "Resource/location is required")
+    @Size(max = 255, message = "Resource/location must not exceed 255 characters")
+    private String resourceLocation;
+
     /**
      * Category of the incident
      */
@@ -76,7 +65,7 @@ public class Incident {
     @Enumerated(EnumType.STRING)
     @NotNull(message = "Category is required")
     private IncidentCategory category;
-    
+
     /**
      * Priority level of the incident
      */
@@ -84,7 +73,15 @@ public class Incident {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private IncidentPriority priority = IncidentPriority.MEDIUM;
-    
+
+    /**
+     * Preferred contact details from the reporter.
+     */
+    @Column(name = "preferred_contact")
+    @NotBlank(message = "Preferred contact is required")
+    @Size(max = 255, message = "Preferred contact must not exceed 255 characters")
+    private String preferredContact;
+
     /**
      * Current status of the incident
      */
@@ -92,47 +89,42 @@ public class Incident {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private IncidentStatus status = IncidentStatus.OPEN;
-    
+
     /**
-     * Securely generated filename for attached image (if any).
-     * Stored as UUID to prevent path traversal attacks.
+     * Attachment metadata stored separately for up to 3 evidence images.
      */
-    @Column(name = "attachment_filename")
-    private String attachmentFilename;
-    
-    /**
-     * MIME type of the attachment for validation
-     */
-    @Column(name = "attachment_mime_type")
-    private String attachmentMimeType;
-    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "incident_attachments", joinColumns = @JoinColumn(name = "incident_id"))
+    @Builder.Default
+    private List<IncidentAttachment> attachments = new ArrayList<>();
+
     /**
      * Staff member assigned to handle this incident
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to")
     private User assignedTo;
-    
+
     /**
      * Resolution notes from staff
      */
     @Column(name = "resolution_notes", columnDefinition = "TEXT")
     private String resolutionNotes;
-    
+
     /**
      * Timestamp when incident was resolved
      */
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
-    
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-    
+
     /**
      * Categories of incidents
      */
@@ -143,9 +135,12 @@ public class Incident {
         EQUIPMENT,
         CLEANLINESS,
         SECURITY,
+        FURNITURE,
+        AV_EQUIPMENT,
+        NETWORK,
         OTHER
     }
-    
+
     /**
      * Priority levels for incidents
      */
@@ -155,7 +150,7 @@ public class Incident {
         HIGH,
         CRITICAL
     }
-    
+
     /**
      * Status of incident resolution
      */
