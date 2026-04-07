@@ -57,3 +57,7 @@ app:
       url: ${SUPABASE_URL:}
       service-key: ${SUPABASE_SERVICE_KEY:}
       bucket: ${SUPABASE_BUCKET:incident-images}
+  init:
+    admin-password: ${INIT_ADMIN_PASSWORD:admin123}
+    staff-password: ${INIT_STAFF_PASSWORD:staff123}
+    student-password: ${INIT_STUDENT_PASSWORD:student123}
