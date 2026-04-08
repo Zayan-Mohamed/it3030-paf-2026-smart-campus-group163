@@ -49,24 +49,14 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Error")
-<<<<<<< HEAD
-                .message("Invalid input: " + errors)
-=======
-                .message("Invalid input provided")
->>>>>>> c3332a4 (Module A: Completed Facility backend and frontend with API integration)
+                .message("Invalid input: " + fieldErrors)
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
                 .details(fieldErrors)
                 .build();
-<<<<<<< HEAD
 
-        log.warn("Validation error on {}: {} fields failed", request.getRequestURI(), errors.size());
-
-=======
-        
         log.warn("Validation error on {}: {} fields failed", request.getRequestURI(), fieldErrors.size());
-        
->>>>>>> c3332a4 (Module A: Completed Facility backend and frontend with API integration)
+
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
@@ -204,8 +194,43 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    @ExceptionHandler(FacilityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFacilityNotFoundException(
+            FacilityNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Not Found")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        log.warn("Facility not found on {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(DuplicateFacilityException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateFacilityException(
+            DuplicateFacilityException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        log.warn("Duplicate facility on {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
     /**
-<<<<<<< HEAD
      * Handle illegal state exceptions (e.g. storage configuration or external service failures).
      */
     @ExceptionHandler(IllegalStateException.class)
@@ -234,18 +259,10 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
             Exception ex,
-=======
-     * Handle facility not found exceptions
-     */
-    @ExceptionHandler(FacilityNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleFacilityNotFoundException(
-            FacilityNotFoundException ex,
->>>>>>> c3332a4 (Module A: Completed Facility backend and frontend with API integration)
             HttpServletRequest request
     ) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.NOT_FOUND.value())
-<<<<<<< HEAD
                 .error("Not Found")
                 .message("The requested endpoint or resource does not exist")
                 .path(request.getRequestURI())
@@ -259,43 +276,6 @@ public class GlobalExceptionHandler {
     /**
      * Handle all other exceptions.
      * CRITICAL: Never expose stack traces or internal details to client.
-=======
-                .error("Facility Not Found")
-                .message(ex.getMessage())
-                .path(request.getRequestURI())
-                .timestamp(LocalDateTime.now())
-                .build();
-        
-        log.warn("Facility not found on {}: {}", request.getRequestURI(), ex.getMessage());
-        
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-    
-    /**
-     * Handle duplicate facility exceptions
-     */
-    @ExceptionHandler(DuplicateFacilityException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateFacilityException(
-            DuplicateFacilityException ex,
-            HttpServletRequest request
-    ) {
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.CONFLICT.value())
-                .error("Duplicate Facility")
-                .message(ex.getMessage())
-                .path(request.getRequestURI())
-                .timestamp(LocalDateTime.now())
-                .build();
-        
-        log.warn("Duplicate facility on {}: {}", request.getRequestURI(), ex.getMessage());
-        
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-    
-    /**
-     * Handle all other exceptions
-     * CRITICAL: Never expose stack traces or internal details to client
->>>>>>> c3332a4 (Module A: Completed Facility backend and frontend with API integration)
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(

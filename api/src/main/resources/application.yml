@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   config:
@@ -44,6 +44,7 @@ spring:
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             user-name-attribute: sub
+
   servlet:
     multipart:
       max-file-size: 5MB
@@ -52,7 +53,7 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET_KEY}
-    expiration-ms: 86400000 # 24 hours
+    expiration-ms: 86400000
   oauth2:
     redirect-uri: http://localhost:5173/auth/callback
   storage:

@@ -1,14 +1,6 @@
 package com.smartcampus.api.repository;
 
 import com.smartcampus.api.model.Facility;
-<<<<<<< HEAD
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface FacilityRepository extends JpaRepository<Facility, Long> {
-}
-=======
 import com.smartcampus.api.model.Facility.FacilityStatus;
 import com.smartcampus.api.model.Facility.FacilityType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,4 +46,3 @@ public interface FacilityRepository extends JpaRepository<Facility, Long>, JpaSp
      */
     boolean existsByName(String name);
 }
->>>>>>> 0fb0729 (Module A: Completed Facility backend and frontend with API integration)

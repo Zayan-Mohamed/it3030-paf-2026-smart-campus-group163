@@ -14,11 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
-/**
- * Spring service implementation for facility and asset catalogue operations.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,34 +24,34 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     public FacilityResponse create(CreateFacilityRequest request) {
-        validateAvailability(request.getAvailableFrom(), request.getAvailableTo());
-
         if (facilityRepository.existsByName(request.getName())) {
-            throw new DuplicateFacilityException(request.getName());
+            throw new DuplicateFacilityException("Facility already exists with name: " + request.getName());
         }
 
-        Facility facility = new Facility();
-        facility.setName(request.getName());
-        facility.setDescription(request.getDescription());
-        facility.setFacilityType(request.getFacilityType());
-        facility.setLocation(request.getLocation());
-        facility.setCapacity(request.getCapacity());
-        facility.setStatus(request.getStatus() != null ? request.getStatus() : Facility.FacilityStatus.AVAILABLE);
-        facility.setImageUrl(request.getImageUrl());
-        facility.setAmenities(request.getAmenities());
-        facility.setAvailableFrom(request.getAvailableFrom());
-        facility.setAvailableTo(request.getAvailableTo());
+        validateAvailability(request.getAvailableFrom(), request.getAvailableTo());
 
-        Facility saved = facilityRepository.save(facility);
-        return mapToResponse(saved);
+        Facility facility = Facility.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .facilityType(request.getFacilityType())
+                .location(request.getLocation())
+                .capacity(request.getCapacity())
+                .status(request.getStatus())
+                .imageUrl(request.getImageUrl())
+                .amenities(request.getAmenities())
+                .availableFrom(request.getAvailableFrom())
+                .availableTo(request.getAvailableTo())
+                .build();
+
+        return mapToResponse(facilityRepository.save(facility));
     }
 
     @Override
     @Transactional(readOnly = true)
     public FacilityResponse getById(Long id) {
-        return facilityRepository.findById(id)
-                .map(this::mapToResponse)
-                .orElseThrow(() -> new FacilityNotFoundException(id));
+        Facility facility = facilityRepository.findById(id)
+                .orElseThrow(() -> new FacilityNotFoundException("Facility not found with id: " + id));
+        return mapToResponse(facility);
     }
 
     @Override
@@ -63,17 +59,18 @@ public class FacilityServiceImpl implements FacilityService {
     public List<FacilityResponse> getAll() {
         return facilityRepository.findAll().stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public FacilityResponse update(Long id, UpdateFacilityRequest request) {
         Facility facility = facilityRepository.findById(id)
-                .orElseThrow(() -> new FacilityNotFoundException(id));
+                .orElseThrow(() -> new FacilityNotFoundException("Facility not found with id: " + id));
 
-        if (request.getName() != null && !request.getName().equals(facility.getName())
+        if (request.getName() != null
+                && !request.getName().equals(facility.getName())
                 && facilityRepository.existsByName(request.getName())) {
-            throw new DuplicateFacilityException(request.getName());
+            throw new DuplicateFacilityException("Facility already exists with name: " + request.getName());
         }
 
         if (request.getAvailableFrom() != null || request.getAvailableTo() != null) {
@@ -118,53 +115,57 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     public void delete(Long id) {
-        if (!facilityRepository.existsById(id)) {
-            throw new FacilityNotFoundException(id);
-        }
-        facilityRepository.deleteById(id);
+        Facility facility = facilityRepository.findById(id)
+                .orElseThrow(() -> new FacilityNotFoundException("Facility not found with id: " + id));
+        facilityRepository.delete(facility);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<FacilityResponse> search(String name,
-                                        String location,
-                                        Facility.FacilityType facilityType,
-                                        Facility.FacilityStatus status,
-                                        Integer minCapacity) {
-        Specification<Facility> spec = Specification.where(null);
+    public List<FacilityResponse> search(
+            String name,
+            String location,
+            Facility.FacilityType facilityType,
+            Facility.FacilityStatus status,
+            Integer minCapacity
+    ) {
+        Specification<Facility> specification = Specification.where(null);
 
         if (name != null && !name.isBlank()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+            String normalizedName = name.toLowerCase();
+            specification = specification.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")), "%" + normalizedName + "%"));
         }
+
         if (location != null && !location.isBlank()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("location")), "%" + location.toLowerCase() + "%"));
+            String normalizedLocation = location.toLowerCase();
+            specification = specification.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("location")), "%" + normalizedLocation + "%"));
         }
+
         if (facilityType != null) {
-            spec = spec.and((root, query, cb) ->
+            specification = specification.and((root, query, cb) ->
                     cb.equal(root.get("facilityType"), facilityType));
         }
+
         if (status != null) {
-            spec = spec.and((root, query, cb) ->
+            specification = specification.and((root, query, cb) ->
                     cb.equal(root.get("status"), status));
         }
+
         if (minCapacity != null) {
-            spec = spec.and((root, query, cb) ->
+            specification = specification.and((root, query, cb) ->
                     cb.greaterThanOrEqualTo(root.get("capacity"), minCapacity));
         }
 
-        return facilityRepository.findAll(spec).stream()
+        return facilityRepository.findAll(specification).stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void validateAvailability(LocalTime from, LocalTime to) {
-        if (from == null || to == null) {
-            return;
-        }
-        if (!from.isBefore(to)) {
-            throw new IllegalArgumentException("Available from time must be before available to time");
+        if (from != null && to != null && !from.isBefore(to)) {
+            throw new IllegalArgumentException("availableFrom must be before availableTo");
         }
     }
 

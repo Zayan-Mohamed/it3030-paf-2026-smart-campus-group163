@@ -42,8 +42,7 @@ public class StaffDashboardController {
     ) {
         log.info("Staff dashboard welcome request from user: {}", userDetails.getUsername());
         
-        // Build response with sample data
-        // TODO: Replace with actual data from services
+        // Placeholder response until dashboard services are wired in.
         StaffDashboardResponse response = StaffDashboardResponse.builder()
                 .message("Welcome Staff Member!")
                 .staffName(userDetails.getUsername())
@@ -71,7 +70,7 @@ public class StaffDashboardController {
     ) {
         log.info("Incident queue request from staff: {}", userDetails.getUsername());
         
-        // TODO: Implement actual incident queue logic
+        // Placeholder response until incident queue services are wired in.
         return ResponseEntity.ok("Incident queue for staff: " + userDetails.getUsername());
     }
     
@@ -90,7 +89,7 @@ public class StaffDashboardController {
     ) {
         log.info("Assigned maintenance request from staff: {}", userDetails.getUsername());
         
-        // TODO: Implement actual maintenance tasks logic
+        // Placeholder response until maintenance services are wired in.
         return ResponseEntity.ok("Assigned maintenance tasks for: " + userDetails.getUsername());
     }
     
@@ -109,7 +108,7 @@ public class StaffDashboardController {
     ) {
         log.info("Today's schedule request from staff: {}", userDetails.getUsername());
         
-        // TODO: Implement actual schedule logic
+        // Placeholder response until scheduling services are wired in.
         return ResponseEntity.ok("Today's schedule for: " + userDetails.getUsername());
     }
 }
