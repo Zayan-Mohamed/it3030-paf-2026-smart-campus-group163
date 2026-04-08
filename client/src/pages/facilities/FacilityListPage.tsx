@@ -1,157 +1,116 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import FacilityFilterBar from "../../components/facilities/FacilityFilterBar";
-import FacilityTable from "../../components/facilities/FacilityTable";
-import { Facility, FacilityStatus, FacilityType } from "../../types";
 
-interface FacilityFilters {
+type Facility = {
+  id: number;
   name: string;
-  location: string;
   facilityType: string;
+  location: string;
+  capacity: number;
   status: string;
-  minCapacity: string;
-}
-
-const initialFilters: FacilityFilters = {
-  name: "",
-  location: "",
-  facilityType: "",
-  status: "",
-  minCapacity: ""
+  availableFrom?: string;
+  availableTo?: string;
 };
 
 const FacilityListPage: React.FC = () => {
   const navigate = useNavigate();
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FacilityFilters>(initialFilters);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+
+  const fetchFacilities = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch("http://localhost:8080/api/facilities");
+      if (!response.ok) {
+        throw new Error("Failed to fetch facilities");
+      }
+
+      const data = await response.json();
+      setFacilities(Array.isArray(data) ? data : []);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Failed to fetch facilities");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadFacilities = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/facilities");
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(
-            (errorData && (errorData.message || JSON.stringify(errorData.details))) ||
-              "Failed to load facilities"
-          );
-        }
-
-        const data = await response.json();
-        setFacilities(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load facilities");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadFacilities();
+    void fetchFacilities();
   }, []);
 
-  const filteredFacilities = useMemo(() => {
-    return facilities.filter((facility) => {
-      const matchesName = facility.name
-        .toLowerCase()
-        .includes(filters.name.toLowerCase());
-      const matchesLocation = facility.location
-        .toLowerCase()
-        .includes(filters.location.toLowerCase());
-      const matchesType = filters.facilityType
-        ? facility.facilityType === filters.facilityType
-        : true;
-      const matchesStatus = filters.status
-        ? facility.status === filters.status
-        : true;
-      const matchesCapacity = filters.minCapacity
-        ? facility.capacity >= parseInt(filters.minCapacity, 10)
-        : true;
-
-      return (
-        matchesName &&
-        matchesLocation &&
-        matchesType &&
-        matchesStatus &&
-        matchesCapacity
-      );
-    });
-  }, [facilities, filters]);
-
-  const handleFilterChange = (field: keyof FacilityFilters, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleResetFilters = () => {
-    setFilters(initialFilters);
-  };
-
-  const handleAdd = () => {
-    navigate("/facilities/new");
-  };
-
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: number): void => {
     navigate(`/facilities/${id}/edit`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this facility?")) {
-      return;
-    }
-
+  const handleDelete = async (id: number): Promise<void> => {
     try {
-      setError(null);
-
-      const response = await fetch(`/api/facilities/${id}`, {
+      const response = await fetch(`http://localhost:8080/api/facilities/${id}`, {
         method: "DELETE"
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          (errorData && (errorData.message || JSON.stringify(errorData.details))) ||
-            "Failed to delete facility"
-        );
+        throw new Error("Failed to delete facility");
       }
 
       setFacilities((prev) => prev.filter((facility) => facility.id !== id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete facility");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Failed to delete facility");
+      }
     }
   };
 
   return (
     <div className="page-container">
-      <div className="header">
-        <h1>Facilities & Assets</h1>
-        <button onClick={handleAdd} className="btn">
-          Add Facility
-        </button>
-      </div>
+      <h1>Facilities & Assets</h1>
 
-      {error && <div className="error-message">{error}</div>}
+      {loading && <p>Loading facilities...</p>}
+      {!loading && error && <p>{error}</p>}
+      {!loading && !error && facilities.length === 0 && <p>No facilities found</p>}
 
-      <FacilityFilterBar
-        filters={filters}
-        onChange={handleFilterChange}
-        onReset={handleResetFilters}
-      />
-
-      {loading ? (
-        <div className="loading">Loading facilities...</div>
-      ) : (
-        <FacilityTable
-          facilities={filteredFacilities}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+      {!loading && !error && facilities.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Capacity</th>
+              <th>Status</th>
+              <th>Available Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {facilities.map((facility) => (
+              <tr key={facility.id}>
+                <td>{facility.name}</td>
+                <td>{facility.facilityType}</td>
+                <td>{facility.location}</td>
+                <td>{facility.capacity}</td>
+                <td>{facility.status}</td>
+                <td>{`${facility.availableFrom || "-"} - ${facility.availableTo || "-"}`}</td>
+                <td>
+                  <button type="button" onClick={() => handleEdit(facility.id)}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => void handleDelete(facility.id)}>
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

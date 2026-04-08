@@ -1,37 +1,80 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import FacilityFilterBar from "../../components/facilities/FacilityFilterBar";
-import FacilityTable from "../../components/facilities/FacilityTable";
+
+const initialFilters = {
+  name: "",
+  location: "",
+  facilityType: "",
+  status: "",
+  minCapacity: ""
+};
+
+const facilityTypes = [
+  "CONFERENCE_ROOM",
+  "LABORATORY",
+  "SPORTS_HALL",
+  "AUDITORIUM",
+  "STUDY_ROOM",
+  "COMPUTER_LAB",
+  "PROJECTOR",
+  "CAMERA",
+  "MEETING_ROOM",
+  "LECTURE_HALL",
+  "OTHER"
+];
+
+const facilityStatuses = [
+  "AVAILABLE",
+  "UNDER_MAINTENANCE",
+  "UNAVAILABLE",
+  "ACTIVE",
+  "OUT_OF_SERVICE"
+];
 
 const FacilityListPage = () => {
   const navigate = useNavigate();
   const [facilities, setFacilities] = useState([]);
-  const [filteredFacilities, setFilteredFacilities] = useState([]);
-  const [filters, setFilters] = useState({
-    name: "",
-    location: "",
-    facilityType: "",
-    status: "",
-    minCapacity: ""
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filters, setFilters] = useState(initialFilters);
 
-  const fetchFacilities = async () => {
+  const fetchFacilities = async (appliedFilters = initialFilters) => {
     try {
       setLoading(true);
-      setError(null);
+      setError("");
 
-      const response = await fetch("/api/facilities");
+      const params = new URLSearchParams();
+
+      if (appliedFilters.name.trim()) {
+        params.set("name", appliedFilters.name.trim());
+      }
+      if (appliedFilters.location.trim()) {
+        params.set("location", appliedFilters.location.trim());
+      }
+      if (appliedFilters.facilityType) {
+        params.set("facilityType", appliedFilters.facilityType);
+      }
+      if (appliedFilters.status) {
+        params.set("status", appliedFilters.status);
+      }
+      if (appliedFilters.minCapacity !== "") {
+        params.set("minCapacity", appliedFilters.minCapacity);
+      }
+
+      const queryString = params.toString();
+      const url = queryString
+        ? `http://localhost:8080/api/facilities?${queryString}`
+        : "http://localhost:8080/api/facilities";
+
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error("Failed to load facilities");
+        throw new Error("Failed to fetch facilities");
       }
 
       const data = await response.json();
-      setFacilities(data || []);
-      setFilteredFacilities(data || []);
+      setFacilities(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.message || "Failed to load facilities");
+      setError(err?.message || "Failed to fetch facilities");
     } finally {
       setLoading(false);
     }
@@ -41,61 +84,22 @@ const FacilityListPage = () => {
     fetchFacilities();
   }, []);
 
-  useEffect(() => {
-    let filtered = [...facilities];
-
-    if (filters.name) {
-      filtered = filtered.filter((facility) =>
-        (facility.name || "").toLowerCase().includes(filters.name.toLowerCase())
-      );
-    }
-
-    if (filters.location) {
-      filtered = filtered.filter((facility) =>
-        (facility.location || "").toLowerCase().includes(filters.location.toLowerCase())
-      );
-    }
-
-    if (filters.facilityType) {
-      filtered = filtered.filter((facility) =>
-        facility.facilityType === filters.facilityType
-      );
-    }
-
-    if (filters.status) {
-      filtered = filtered.filter((facility) =>
-        facility.status === filters.status
-      );
-    }
-
-    if (filters.minCapacity) {
-      const minCapacity = parseInt(filters.minCapacity, 10);
-
-      if (!isNaN(minCapacity)) {
-        filtered = filtered.filter((facility) =>
-          Number(facility.capacity || 0) >= minCapacity
-        );
-      }
-    }
-
-    setFilteredFacilities(filtered);
-  }, [facilities, filters]);
-
-  const handleFilterChange = (field, value) => {
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
     setFilters((prev) => ({
       ...prev,
-      [field]: value
+      [name]: value
     }));
   };
 
-  const handleResetFilters = () => {
-    setFilters({
-      name: "",
-      location: "",
-      facilityType: "",
-      status: "",
-      minCapacity: ""
-    });
+  const handleSearch = (event) => {
+    event.preventDefault();
+    fetchFacilities(filters);
+  };
+
+  const handleReset = () => {
+    setFilters(initialFilters);
+    fetchFacilities(initialFilters);
   };
 
   const handleEdit = (id) => {
@@ -103,22 +107,20 @@ const FacilityListPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this facility?")) {
+    const isConfirmed = window.confirm("Are you sure you want to delete this facility?");
+    if (!isConfirmed) {
       return;
     }
 
     try {
-      setError(null);
-      const response = await fetch(`/api/facilities/${id}`, {
+      setError("");
+      const response = await fetch(`http://localhost:8080/api/facilities/${id}`, {
         method: "DELETE"
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(
-          (errorData && (errorData.message || JSON.stringify(errorData.details))) ||
-            "Failed to delete facility"
-        );
+        throw new Error(errorData?.message || "Failed to delete facility");
       }
 
       setFacilities((prev) => prev.filter((facility) => facility.id !== id));
@@ -127,35 +129,95 @@ const FacilityListPage = () => {
     }
   };
 
-  const handleAdd = () => {
-    navigate("/facilities/new");
-  };
-
   return (
     <div className="page-container">
-      <div className="header">
-        <h1>Facilities & Assets</h1>
-        <button onClick={handleAdd} className="btn btn-primary">
-          Add Facility
-        </button>
-      </div>
+      <h1>Facilities & Assets</h1>
 
-      {error && <div className="error-message">{error}</div>}
-
-      <FacilityFilterBar
-        filters={filters}
-        onChange={handleFilterChange}
-        onReset={handleResetFilters}
-      />
-
-      {loading ? (
-        <div className="loading">Loading facilities...</div>
-      ) : (
-        <FacilityTable
-          facilities={filteredFacilities}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+      <form onSubmit={handleSearch} style={{ marginBottom: "1rem" }}>
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          value={filters.name}
+          onChange={handleFilterChange}
         />
+        <input
+          type="text"
+          name="location"
+          placeholder="Location"
+          value={filters.location}
+          onChange={handleFilterChange}
+        />
+        <select name="facilityType" value={filters.facilityType} onChange={handleFilterChange}>
+          <option value="">All Types</option>
+          {facilityTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+        <select name="status" value={filters.status} onChange={handleFilterChange}>
+          <option value="">All Statuses</option>
+          {facilityStatuses.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="1"
+          name="minCapacity"
+          placeholder="Min Capacity"
+          value={filters.minCapacity}
+          onChange={handleFilterChange}
+        />
+        <button type="submit">Search</button>
+        <button type="button" onClick={handleReset}>
+          Reset
+        </button>
+      </form>
+
+      {loading && <p>Loading facilities...</p>}
+
+      {!loading && error && <p>{error}</p>}
+
+      {!loading && !error && facilities.length === 0 && <p>No facilities found</p>}
+
+      {!loading && !error && facilities.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Capacity</th>
+              <th>Status</th>
+              <th>Available Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {facilities.map((facility) => (
+              <tr key={facility.id}>
+                <td>{facility.name}</td>
+                <td>{facility.facilityType}</td>
+                <td>{facility.location}</td>
+                <td>{facility.capacity}</td>
+                <td>{facility.status}</td>
+                <td>{`${facility.availableFrom || "-"} - ${facility.availableTo || "-"}`}</td>
+                <td>
+                  <button type="button" onClick={() => handleEdit(facility.id)}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => handleDelete(facility.id)}>
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

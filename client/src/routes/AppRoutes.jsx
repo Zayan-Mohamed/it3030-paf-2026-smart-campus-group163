@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Dashboard from '../pages/Dashboard';
-import FacilitiesPage from '../pages/FacilitiesPage';
 import FacilityListPage from '../pages/facilities/FacilityListPage';
 import AddFacilityPage from '../pages/facilities/AddFacilityPage';
 import EditFacilityPage from '../pages/EditFacilityPage';
@@ -40,7 +39,7 @@ const AppRoutes = () => {
       <Route path="/oauth/callback" element={<OAuthCallback />} />
 
       {/* Main Application Routes */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/facilities" replace />} />
       <Route
         path="/dashboard"
         element={
