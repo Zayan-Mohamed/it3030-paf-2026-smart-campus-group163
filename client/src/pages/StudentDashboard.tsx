@@ -36,7 +36,7 @@ export const StudentDashboard = () => {
   ];
 
   const quickActions = [
-    { title: 'Book Facility', icon: Building2, desc: 'Reserve study rooms, labs, and more', color: '#0891b2' },
+    { title: 'Book Facility', icon: Building2, desc: 'Reserve study rooms, labs, and more', color: '#0891b2', link: '/bookings/new' },
     { title: 'Report Issue', icon: FileText, desc: 'Submit maintenance requests', color: '#f59e0b' },
     { title: 'Campus Map', icon: Map, desc: 'Navigate campus buildings', color: '#10b981' },
     { title: 'My Profile', icon: User, desc: 'Update your information', color: '#8b5cf6' },
@@ -133,13 +133,18 @@ export const StudentDashboard = () => {
             {quickActions.map((action, index) => {
               const IconComponent = action.icon;
               return (
-                <div key={index} className="action-card" style={{ animationDelay: `${index * 0.1}s` }}>
+                <Link
+                  key={index}
+                  to={action.link ?? '/dashboard/student'}
+                  className="action-card"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
                   <div className="action-icon" style={{ background: `${action.color}20`, color: action.color }}>
                     <IconComponent size={24} />
                   </div>
                   <h3 className="action-title">{action.title}</h3>
                   <p className="action-desc">{action.desc}</p>
-                </div>
+                </Link>
               );
             })}
           </div>

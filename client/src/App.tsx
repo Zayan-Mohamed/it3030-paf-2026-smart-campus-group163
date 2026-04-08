@@ -4,6 +4,10 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { OAuthCallback } from './pages/OAuthCallback';
 import { NewIncident } from './pages/NewIncident';
+import { BookingListPage } from './pages/BookingListPage';
+import { BookingDetailsPage } from './pages/BookingDetailsPage';
+import { BookingFormPage } from './pages/BookingFormPage';
+import { BookingCalendarPage } from './pages/BookingCalendarPage';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardRedirect } from './components/DashboardRedirect';
@@ -63,6 +67,14 @@ function App() {
                     <NewIncident />
                   </main>
                 } />
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'STAFF']} />}>
+                <Route path="/bookings" element={<BookingListPage />} />
+                <Route path="/bookings/new" element={<BookingFormPage />} />
+                <Route path="/bookings/calendar" element={<BookingCalendarPage />} />
+                <Route path="/bookings/:bookingId" element={<BookingDetailsPage />} />
+                <Route path="/bookings/:bookingId/edit" element={<BookingFormPage />} />
               </Route>
               
               {/* Smart redirect to role-appropriate dashboard */}

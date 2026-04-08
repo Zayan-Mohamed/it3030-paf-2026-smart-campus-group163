@@ -28,6 +28,9 @@ export const Navbar = () => {
               <Link to="/dashboard" className="text-sm font-semibold text-slate-700 transition hover:text-slate-900">
                 Dashboard
               </Link>
+              <Link to="/bookings" className="text-sm font-semibold text-slate-700 transition hover:text-slate-900">
+                Bookings
+              </Link>
               <Link to="/incidents/new" className="text-sm font-semibold text-cyan-700 transition hover:text-cyan-800">
                 Report Incident
               </Link>
