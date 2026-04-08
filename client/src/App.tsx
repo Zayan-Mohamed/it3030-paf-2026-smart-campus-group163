@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { OAuthCallback } from './pages/OAuthCallback';
@@ -37,9 +38,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="min-h-screen">
-          <Navbar />
-          <Routes>
+        <NotificationProvider>
+          <div className="min-h-screen">
+            <Navbar />
+            <Routes>
               {/* Public Routes with constrained width */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={
@@ -104,7 +106,8 @@ function App() {
               {/* Catch-all route */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
-        </div>
+          </div>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

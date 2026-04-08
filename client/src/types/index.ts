@@ -91,3 +91,24 @@ export interface Incident {
   imageUrls: string[];
   createdAt: string;
 }
+
+export interface ApiError {
+  status: number;
+  error: string;
+  message: string;
+  path: string;
+  timestamp: string;
+  details?: Record<string, string>;
+}
+
+export type NotificationType = 'BOOKING_UPDATE' | 'TICKET_UPDATE' | 'NEW_COMMENT';
+
+export interface Notification {
+  id: number;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: string;
+  referenceId?: string;
+  referenceType?: string;
+}
