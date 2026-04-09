@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, CalendarClock, MapPin, Pencil, Trash2, Users, XCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { bookingStatusClasses, bookingStatusLabel, cancelBooking, deleteBooking, formatDateTime, getBooking } from '../lib/bookings';
+import {
+  bookingStatusClasses,
+  bookingStatusLabel,
+  cancelBooking,
+  deleteBooking,
+  formatDateTime,
+  getApprovedCancellationDeadline,
+  getBooking,
+} from '../lib/bookings';
 import type { Booking } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -85,6 +93,8 @@ export const BookingDetailsPage = () => {
       </div>
     );
   }
+
+  const cancellationDeadline = getApprovedCancellationDeadline(booking.reviewedAt);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -203,6 +213,13 @@ export const BookingDetailsPage = () => {
             ) : (
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-slate-500">
                 No review note has been added yet.
+              </div>
+            )}
+
+            {booking.status === 'APPROVED' && cancellationDeadline && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                Approved bookings can be cancelled only within 2 hours of approval.
+                {' '}Deadline: {formatDateTime(cancellationDeadline)}
               </div>
             )}
           </CardContent>

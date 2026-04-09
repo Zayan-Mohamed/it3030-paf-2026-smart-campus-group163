@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, CalendarDays, Save } from 'lucide-react';
@@ -22,7 +22,9 @@ import { Select } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 
 type FormState = {
-  facilityId: string;
+  name: string;
+  facilityType: string;
+  location: string;
   startTime: string;
   endTime: string;
   purpose: string;
@@ -30,7 +32,9 @@ type FormState = {
 };
 
 const initialForm: FormState = {
-  facilityId: '',
+  name: '',
+  facilityType: '',
+  location: '',
   startTime: '',
   endTime: '',
   purpose: '',
@@ -51,6 +55,41 @@ export const BookingFormPage = () => {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [conflictResult, setConflictResult] = useState<BookingConflictResult | null>(null);
 
+  const selectedFacility = useMemo(() => (
+    facilities.find((facility) =>
+      facility.name === form.name
+      && facility.facilityType === form.facilityType
+      && facility.location === form.location
+    ) ?? null
+  ), [facilities, form.name, form.facilityType, form.location]);
+
+  const nameOptions = useMemo(() => {
+    const matchingFacilities = facilities.filter((facility) =>
+      (!form.facilityType || facility.facilityType === form.facilityType)
+      && (!form.location || facility.location === form.location)
+    );
+
+    return Array.from(new Set(matchingFacilities.map((facility) => facility.name))).sort((left, right) => left.localeCompare(right));
+  }, [facilities, form.facilityType, form.location]);
+
+  const typeOptions = useMemo(() => {
+    const matchingFacilities = facilities.filter((facility) =>
+      (!form.name || facility.name === form.name)
+      && (!form.location || facility.location === form.location)
+    );
+
+    return Array.from(new Set(matchingFacilities.map((facility) => facility.facilityType))).sort((left, right) => left.localeCompare(right));
+  }, [facilities, form.name, form.location]);
+
+  const locationOptions = useMemo(() => {
+    const matchingFacilities = facilities.filter((facility) =>
+      (!form.name || facility.name === form.name)
+      && (!form.facilityType || facility.facilityType === form.facilityType)
+    );
+
+    return Array.from(new Set(matchingFacilities.map((facility) => facility.location))).sort((left, right) => left.localeCompare(right));
+  }, [facilities, form.name, form.facilityType]);
+
   useEffect(() => {
     const loadPage = async () => {
       if (!token) {
@@ -67,8 +106,11 @@ export const BookingFormPage = () => {
 
         if (bookingId) {
           const booking = await getBooking(token, bookingId);
+          const bookedFacility = facilityData.find((facility) => facility.id === booking.facilityId);
           setForm({
-            facilityId: String(booking.facilityId),
+            name: bookedFacility?.name ?? '',
+            facilityType: bookedFacility?.facilityType ?? '',
+            location: bookedFacility?.location ?? '',
             startTime: toLocalDateTimeInputValue(booking.startTime),
             endTime: toLocalDateTimeInputValue(booking.endTime),
             purpose: booking.purpose,
@@ -86,7 +128,7 @@ export const BookingFormPage = () => {
   }, [token, bookingId]);
 
   useEffect(() => {
-    const shouldCheck = form.facilityId && form.startTime && form.endTime;
+    const shouldCheck = selectedFacility && form.startTime && form.endTime;
 
     if (!token || !shouldCheck) {
       setConflictResult(null);
@@ -98,7 +140,7 @@ export const BookingFormPage = () => {
 
     void checkBookingConflicts(
       token,
-      Number(form.facilityId),
+      selectedFacility.id,
       fromLocalDateTimeInputValue(form.startTime),
       fromLocalDateTimeInputValue(form.endTime),
       bookingId
@@ -123,7 +165,7 @@ export const BookingFormPage = () => {
     return () => {
       active = false;
     };
-  }, [token, form.facilityId, form.startTime, form.endTime, bookingId]);
+  }, [token, selectedFacility, form.startTime, form.endTime, bookingId]);
 
   const updateField = (field: keyof FormState, value: string) => {
     setForm((previous) => ({ ...previous, [field]: value }));
@@ -131,11 +173,89 @@ export const BookingFormPage = () => {
     setError(null);
   };
 
+  const handleNameChange = (value: string) => {
+    setForm((previous) => ({
+      ...previous,
+      name: value,
+      facilityType: value && previous.facilityType && facilities.some((facility) =>
+        facility.name === value
+        && facility.facilityType === previous.facilityType
+        && (!previous.location || facility.location === previous.location)
+      )
+        ? previous.facilityType
+        : '',
+      location: value && previous.location && facilities.some((facility) =>
+        facility.name === value
+        && facility.location === previous.location
+        && (!previous.facilityType || facility.facilityType === previous.facilityType)
+      )
+        ? previous.location
+        : '',
+    }));
+    setFieldErrors((previous) => ({ ...previous, name: undefined, facilityType: undefined, location: undefined }));
+    setError(null);
+  };
+
+  const handleTypeChange = (value: string) => {
+    setForm((previous) => ({
+      ...previous,
+      facilityType: value,
+      name: value && previous.name && facilities.some((facility) =>
+        facility.facilityType === value
+        && facility.name === previous.name
+        && (!previous.location || facility.location === previous.location)
+      )
+        ? previous.name
+        : '',
+      location: value && previous.location && facilities.some((facility) =>
+        facility.facilityType === value
+        && facility.location === previous.location
+        && (!previous.name || facility.name === previous.name)
+      )
+        ? previous.location
+        : '',
+    }));
+    setFieldErrors((previous) => ({ ...previous, name: undefined, facilityType: undefined, location: undefined }));
+    setError(null);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setForm((previous) => ({
+      ...previous,
+      location: value,
+      name: value && previous.name && facilities.some((facility) =>
+        facility.location === value
+        && facility.name === previous.name
+        && (!previous.facilityType || facility.facilityType === previous.facilityType)
+      )
+        ? previous.name
+        : '',
+      facilityType: value && previous.facilityType && facilities.some((facility) =>
+        facility.location === value
+        && facility.facilityType === previous.facilityType
+        && (!previous.name || facility.name === previous.name)
+      )
+        ? previous.facilityType
+        : '',
+    }));
+    setFieldErrors((previous) => ({ ...previous, name: undefined, facilityType: undefined, location: undefined }));
+    setError(null);
+  };
+
   const validate = () => {
     const nextErrors: Partial<Record<keyof FormState, string>> = {};
 
-    if (!form.facilityId) {
-      nextErrors.facilityId = 'Facility is required';
+    if (!form.name) {
+      nextErrors.name = 'Name is required';
+    }
+    if (!form.facilityType) {
+      nextErrors.facilityType = 'Type is required';
+    }
+    if (!form.location) {
+      nextErrors.location = 'Location is required';
+    }
+    if (form.name && form.facilityType && form.location && !selectedFacility) {
+      nextErrors.location = 'Select a valid name, type, and location combination';
     }
     if (!form.startTime) {
       nextErrors.startTime = 'Start time is required';
@@ -174,7 +294,7 @@ export const BookingFormPage = () => {
       setSubmitting(true);
 
       const payload = {
-        facilityId: Number(form.facilityId),
+        facilityId: selectedFacility!.id,
         startTime: fromLocalDateTimeInputValue(form.startTime),
         endTime: fromLocalDateTimeInputValue(form.endTime),
         purpose: form.purpose.trim(),
@@ -211,7 +331,7 @@ export const BookingFormPage = () => {
           <p className="mt-2 text-sm text-slate-600">
             {isEditMode
               ? 'Adjust the booking details and re-run conflict validation before resubmitting.'
-              : 'Create a booking request with date, time, purpose, and expected attendees.'}
+              : 'Create a booking request using the admin-added facility name, type, and location details.'}
           </p>
         </div>
 
@@ -226,7 +346,7 @@ export const BookingFormPage = () => {
       <Card className="border-slate-200/80 shadow-lg shadow-slate-900/5">
         <CardHeader>
           <CardTitle className="text-xl">{isEditMode ? 'Edit booking request' : 'Booking request form'}</CardTitle>
-          <CardDescription>Conflict checking runs automatically when you choose the facility and time range.</CardDescription>
+          <CardDescription>Choose the facility name, type, and location from admin-added records, then complete the rest of the request.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -239,16 +359,42 @@ export const BookingFormPage = () => {
 
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="facilityId">Facility</Label>
-                <Select id="facilityId" value={form.facilityId} onChange={(event) => updateField('facilityId', event.target.value)}>
-                  <option value="">Select a facility</option>
-                  {facilities.map((facility) => (
-                    <option key={facility.id} value={facility.id}>
-                      {facility.name} - {facility.location}
+                <Label htmlFor="name">Name</Label>
+                <Select id="name" value={form.name} onChange={(event) => handleNameChange(event.target.value)}>
+                  <option value="">Select a name</option>
+                  {nameOptions.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
                     </option>
                   ))}
                 </Select>
-                {fieldErrors.facilityId && <p className="text-xs text-red-600">{fieldErrors.facilityId}</p>}
+                {fieldErrors.name && <p className="text-xs text-red-600">{fieldErrors.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="facilityType">Type</Label>
+                <Select id="facilityType" value={form.facilityType} onChange={(event) => handleTypeChange(event.target.value)}>
+                  <option value="">Select a type</option>
+                  {typeOptions.map((facilityType) => (
+                    <option key={facilityType} value={facilityType}>
+                      {facilityType.replaceAll('_', ' ')}
+                    </option>
+                  ))}
+                </Select>
+                {fieldErrors.facilityType && <p className="text-xs text-red-600">{fieldErrors.facilityType}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Select id="location" value={form.location} onChange={(event) => handleLocationChange(event.target.value)}>
+                  <option value="">Select a location</option>
+                  {locationOptions.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </Select>
+                {fieldErrors.location && <p className="text-xs text-red-600">{fieldErrors.location}</p>}
               </div>
 
               <div className="space-y-2">
@@ -277,6 +423,18 @@ export const BookingFormPage = () => {
               </div>
             </div>
 
+            {selectedFacility && (
+              <div className="rounded-xl border border-cyan-200 bg-cyan-50/70 p-4 text-sm text-cyan-950">
+                <p className="font-semibold">Selected facility details</p>
+                <div className="mt-2 grid gap-2 md:grid-cols-2">
+                  <p><span className="font-medium">Name:</span> {selectedFacility.name}</p>
+                  <p><span className="font-medium">Type:</span> {selectedFacility.facilityType.replaceAll('_', ' ')}</p>
+                  <p><span className="font-medium">Location:</span> {selectedFacility.location}</p>
+                  <p><span className="font-medium">Capacity:</span> {selectedFacility.capacity}</p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="purpose">Purpose</Label>
               <Textarea
@@ -298,8 +456,8 @@ export const BookingFormPage = () => {
                 {checkingConflicts && <span className="text-xs font-medium text-slate-500">Checking...</span>}
               </div>
 
-              {!form.facilityId || !form.startTime || !form.endTime ? (
-                <p className="text-sm text-slate-500">Select a facility, start time, and end time to run conflict checking.</p>
+              {!selectedFacility || !form.startTime || !form.endTime ? (
+                <p className="text-sm text-slate-500">Select name, type, location, start time, and end time to run conflict checking.</p>
               ) : conflictResult?.hasConflict ? (
                 <div className="space-y-3">
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
