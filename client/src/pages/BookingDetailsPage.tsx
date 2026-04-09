@@ -14,6 +14,7 @@ import {
 import type { Booking } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { StudentBookingsLayout } from '../components/StudentBookingsLayout';
 
 export const BookingDetailsPage = () => {
   const { token } = useAuth();
@@ -80,35 +81,37 @@ export const BookingDetailsPage = () => {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <StudentBookingsLayout
+        activeItem="bookings"
+        title="Booking Details"
+        subtitle="Review the full booking request, status, and facility information."
+      >
         <Card><CardContent className="py-12 text-center text-sm text-slate-500">Loading booking details...</CardContent></Card>
-      </div>
+      </StudentBookingsLayout>
     );
   }
 
   if (!booking) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <StudentBookingsLayout
+        activeItem="bookings"
+        title="Booking Details"
+        subtitle="Review the full booking request, status, and facility information."
+      >
         <Card><CardContent className="py-12 text-center text-sm text-slate-500">{error ?? 'Booking not found.'}</CardContent></Card>
-      </div>
+      </StudentBookingsLayout>
     );
   }
 
   const cancellationDeadline = getApprovedCancellationDeadline(booking.reviewedAt);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <Link to="/bookings" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800">
-            <ArrowLeft className="h-4 w-4" />
-            Back to bookings
-          </Link>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Booking Details</h1>
-          <p className="mt-2 text-sm text-slate-600">Review the full booking request, status, and facility information.</p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
+    <StudentBookingsLayout
+      activeItem="bookings"
+      title="Booking Details"
+      subtitle="Review the full booking request, status, and facility information."
+      actions={(
+        <>
           {booking.canEdit && (
             <Link to={`/bookings/${booking.id}/edit`}>
               <Button variant="outline">
@@ -131,7 +134,14 @@ export const BookingDetailsPage = () => {
               {submitting ? 'Deleting...' : 'Delete'}
             </Button>
           )}
-        </div>
+        </>
+      )}
+    >
+      <div className="mb-6">
+        <Link to="/bookings" className="inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800">
+          <ArrowLeft className="h-4 w-4" />
+          Back to bookings
+        </Link>
       </div>
 
       {error && (
@@ -225,6 +235,6 @@ export const BookingDetailsPage = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </StudentBookingsLayout>
   );
 };

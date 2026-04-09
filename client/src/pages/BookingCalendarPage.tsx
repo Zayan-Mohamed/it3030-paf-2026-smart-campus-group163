@@ -7,6 +7,7 @@ import type { Booking, Facility } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select';
+import { StudentBookingsLayout } from '../components/StudentBookingsLayout';
 
 function startOfWeek(date: Date) {
   const next = new Date(date);
@@ -74,13 +75,12 @@ export const BookingCalendarPage = () => {
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Booking Calendar</h1>
-          <p className="mt-2 text-sm text-slate-600">Check weekly availability and review your existing bookings by date.</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
+    <StudentBookingsLayout
+      activeItem="calendar"
+      title="Booking Calendar"
+      subtitle="Check weekly availability and review your existing bookings by date."
+      actions={(
+        <>
           <Link to="/bookings">
             <Button variant="outline">Booking List</Button>
           </Link>
@@ -90,9 +90,9 @@ export const BookingCalendarPage = () => {
               New Booking
             </Button>
           </Link>
-        </div>
-      </div>
-
+        </>
+      )}
+    >
       <Card className="mb-6 border-slate-200/80 shadow-lg shadow-slate-900/5">
         <CardHeader>
           <CardTitle className="text-lg">Calendar Controls</CardTitle>
@@ -183,6 +183,6 @@ export const BookingCalendarPage = () => {
           })
         )}
       </div>
-    </div>
+    </StudentBookingsLayout>
   );
 };

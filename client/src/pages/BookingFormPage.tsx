@@ -20,6 +20,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
+import { StudentBookingsLayout } from '../components/StudentBookingsLayout';
 
 type FormState = {
   name: string;
@@ -54,6 +55,10 @@ export const BookingFormPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [conflictResult, setConflictResult] = useState<BookingConflictResult | null>(null);
+  const pageTitle = isEditMode ? 'Update Booking' : 'New Booking';
+  const pageSubtitle = isEditMode
+    ? 'Adjust the booking details and re-run conflict validation before resubmitting.'
+    : 'Create a booking request using the admin-added facility name, type, and location details.';
 
   const selectedFacility = useMemo(() => (
     facilities.find((facility) =>
@@ -315,34 +320,38 @@ export const BookingFormPage = () => {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <StudentBookingsLayout
+        activeItem="newBooking"
+        title={pageTitle}
+        subtitle={pageSubtitle}
+        actions={(
+          <Link to="/bookings/calendar">
+            <Button variant="outline">
+              <CalendarDays className="mr-2 h-4 w-4" />
+              View Calendar
+            </Button>
+          </Link>
+        )}
+      >
         <Card><CardContent className="py-12 text-center text-sm text-slate-500">Loading booking form...</CardContent></Card>
-      </div>
+      </StudentBookingsLayout>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            {isEditMode ? 'Update Booking' : 'New Booking'}
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {isEditMode
-              ? 'Adjust the booking details and re-run conflict validation before resubmitting.'
-              : 'Create a booking request using the admin-added facility name, type, and location details.'}
-          </p>
-        </div>
-
+    <StudentBookingsLayout
+      activeItem="newBooking"
+      title={pageTitle}
+      subtitle={pageSubtitle}
+      actions={(
         <Link to="/bookings/calendar">
           <Button variant="outline">
             <CalendarDays className="mr-2 h-4 w-4" />
             View Calendar
           </Button>
         </Link>
-      </div>
-
+      )}
+    >
       <Card className="border-slate-200/80 shadow-lg shadow-slate-900/5">
         <CardHeader>
           <CardTitle className="text-xl">{isEditMode ? 'Edit booking request' : 'Booking request form'}</CardTitle>
@@ -494,6 +503,6 @@ export const BookingFormPage = () => {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </StudentBookingsLayout>
   );
 };

@@ -7,6 +7,7 @@ import type { Booking, BookingStatus, Facility } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select';
+import { StudentBookingsLayout } from '../components/StudentBookingsLayout';
 
 const bookingStatuses: Array<{ value: BookingStatus | ''; label: string }> = [
   { value: '', label: 'All statuses' },
@@ -87,13 +88,12 @@ export const BookingListPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Booking List</h1>
-          <p className="mt-2 text-sm text-slate-600">View, track, update, cancel, and delete your booking requests.</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
+    <StudentBookingsLayout
+      activeItem="bookings"
+      title="My Bookings"
+      subtitle="View, track, update, cancel, and delete your booking requests."
+      actions={(
+        <>
           <Link to="/bookings/calendar">
             <Button variant="outline">
               <CalendarDays className="mr-2 h-4 w-4" />
@@ -106,9 +106,9 @@ export const BookingListPage = () => {
               New Booking
             </Button>
           </Link>
-        </div>
-      </div>
-
+        </>
+      )}
+    >
       <Card className="mb-6 border-slate-200/80 shadow-lg shadow-slate-900/5">
         <CardHeader>
           <CardTitle className="text-lg">Filters</CardTitle>
@@ -240,6 +240,6 @@ export const BookingListPage = () => {
           ))}
         </div>
       )}
-    </div>
+    </StudentBookingsLayout>
   );
 };
