@@ -70,11 +70,11 @@ public class Facility {
     private String amenities;
 
     @NotNull(message = "Available from time is required")
-    @Column(name = "available_from", nullable = false)
+    @Column(name = "available_from", nullable = false, columnDefinition = "time(0) default '08:00:00'")
     private LocalTime availableFrom;
 
     @NotNull(message = "Available to time is required")
-    @Column(name = "available_to", nullable = false)
+    @Column(name = "available_to", nullable = false, columnDefinition = "time(0) default '18:00:00'")
     private LocalTime availableTo;
 
     @CreationTimestamp
