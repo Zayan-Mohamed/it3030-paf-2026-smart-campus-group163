@@ -13,6 +13,8 @@ public interface FacilityService {
 
     FacilityResponse getById(Long id);
 
+    Facility getFacilityEntity(Long id);
+
     List<FacilityResponse> getAll();
 
     FacilityResponse update(Long id, UpdateFacilityRequest request);

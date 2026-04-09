@@ -49,9 +49,14 @@ public class FacilityServiceImpl implements FacilityService {
     @Override
     @Transactional(readOnly = true)
     public FacilityResponse getById(Long id) {
-        Facility facility = facilityRepository.findById(id)
+        return mapToResponse(getFacilityEntity(id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Facility getFacilityEntity(Long id) {
+        return facilityRepository.findById(id)
                 .orElseThrow(() -> new FacilityNotFoundException("Facility not found with id: " + id));
-        return mapToResponse(facility);
     }
 
     @Override
@@ -129,7 +134,7 @@ public class FacilityServiceImpl implements FacilityService {
             Facility.FacilityStatus status,
             Integer minCapacity
     ) {
-        Specification<Facility> specification = Specification.where(null);
+        Specification<Facility> specification = (root, query, cb) -> cb.conjunction();
 
         if (name != null && !name.isBlank()) {
             String normalizedName = name.toLowerCase();

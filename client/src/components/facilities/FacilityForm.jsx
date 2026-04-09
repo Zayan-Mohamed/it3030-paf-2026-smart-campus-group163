@@ -1,56 +1,82 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
+const initialFormData = {
+  name: "",
+  description: "",
+  facilityType: "",
+  location: "",
+  capacity: "",
+  status: "",
+  imageUrl: "",
+  amenities: "",
+  availableFrom: "",
+  availableTo: ""
+};
+
+const FacilityForm = ({
+  formData,
+  onChange,
+  onSubmit,
+  onCancel,
+  submitLabel = "Save",
+  isLoading = false
+}) => {
   const [errors, setErrors] = useState({});
+  const [localFormData, setLocalFormData] = useState(formData || initialFormData);
 
-  const handleInputChange = (field, value) => {
-    onChange(field, value);
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+  const isControlled = typeof onChange === "function";
+  const currentData = isControlled ? (formData || initialFormData) : localFormData;
+
+  useEffect(() => {
+    if (isControlled && formData) {
+      setLocalFormData(formData);
+    }
+  }, [formData, isControlled]);
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+
+    if (isControlled) {
+      onChange(name, value);
+    } else {
+      setLocalFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    // Required fields
-    if (!formData.name?.trim()) {
+    if (!currentData.name?.trim()) {
       newErrors.name = "Name is required";
     }
-    if (!formData.description?.trim()) {
-      newErrors.description = "Description is required";
-    }
-    if (!formData.facilityType) {
+    if (!currentData.facilityType) {
       newErrors.facilityType = "Facility type is required";
     }
-    if (!formData.location?.trim()) {
+    if (!currentData.location?.trim()) {
       newErrors.location = "Location is required";
     }
-    if (!formData.capacity || formData.capacity < 1) {
+    if (!currentData.capacity || Number(currentData.capacity) < 1) {
       newErrors.capacity = "Capacity must be at least 1";
     }
-    if (!formData.status) {
+    if (!currentData.status) {
       newErrors.status = "Status is required";
     }
-    if (!formData.imageUrl?.trim()) {
-      newErrors.imageUrl = "Image URL is required";
-    }
-    if (!formData.amenities?.trim()) {
-      newErrors.amenities = "Amenities is required";
-    }
-    if (!formData.availableFrom) {
+    if (!currentData.availableFrom) {
       newErrors.availableFrom = "Available from time is required";
     }
-    if (!formData.availableTo) {
+    if (!currentData.availableTo) {
       newErrors.availableTo = "Available to time is required";
     }
 
-    // Time validation
-    if (formData.availableFrom && formData.availableTo) {
-      if (formData.availableFrom >= formData.availableTo) {
-        newErrors.availableTo = "Available to time must be after available from time";
-      }
+    if (currentData.availableFrom && currentData.availableTo && currentData.availableFrom >= currentData.availableTo) {
+      newErrors.availableTo = "Available to time must be after available from time";
     }
 
     setErrors(newErrors);
@@ -59,8 +85,8 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      onSubmit();
+    if (validateForm() && typeof onSubmit === "function") {
+      onSubmit(currentData);
     }
   };
 
@@ -71,8 +97,9 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="text"
           id="name"
-          value={formData.name || ""}
-          onChange={(e) => handleInputChange("name", e.target.value)}
+          name="name"
+          value={currentData.name || ""}
+          onChange={handleInputChange}
         />
         {errors.name && <span>{errors.name}</span>}
       </div>
@@ -81,18 +108,19 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <label htmlFor="description">Description</label>
         <textarea
           id="description"
-          value={formData.description || ""}
-          onChange={(e) => handleInputChange("description", e.target.value)}
+          name="description"
+          value={currentData.description || ""}
+          onChange={handleInputChange}
         />
-        {errors.description && <span>{errors.description}</span>}
       </div>
 
       <div>
         <label htmlFor="facilityType">Facility Type</label>
         <select
           id="facilityType"
-          value={formData.facilityType || ""}
-          onChange={(e) => handleInputChange("facilityType", e.target.value)}
+          name="facilityType"
+          value={currentData.facilityType || ""}
+          onChange={handleInputChange}
         >
           <option value="">Select Type</option>
           <option value="CONFERENCE_ROOM">CONFERENCE_ROOM</option>
@@ -101,6 +129,10 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
           <option value="AUDITORIUM">AUDITORIUM</option>
           <option value="STUDY_ROOM">STUDY_ROOM</option>
           <option value="COMPUTER_LAB">COMPUTER_LAB</option>
+          <option value="PROJECTOR">PROJECTOR</option>
+          <option value="CAMERA">CAMERA</option>
+          <option value="MEETING_ROOM">MEETING_ROOM</option>
+          <option value="LECTURE_HALL">LECTURE_HALL</option>
           <option value="OTHER">OTHER</option>
         </select>
         {errors.facilityType && <span>{errors.facilityType}</span>}
@@ -111,8 +143,9 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="text"
           id="location"
-          value={formData.location || ""}
-          onChange={(e) => handleInputChange("location", e.target.value)}
+          name="location"
+          value={currentData.location || ""}
+          onChange={handleInputChange}
         />
         {errors.location && <span>{errors.location}</span>}
       </div>
@@ -122,8 +155,10 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="number"
           id="capacity"
-          value={formData.capacity || ""}
-          onChange={(e) => handleInputChange("capacity", parseInt(e.target.value) || 0)}
+          name="capacity"
+          min="1"
+          value={currentData.capacity || ""}
+          onChange={handleInputChange}
         />
         {errors.capacity && <span>{errors.capacity}</span>}
       </div>
@@ -132,13 +167,16 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <label htmlFor="status">Status</label>
         <select
           id="status"
-          value={formData.status || ""}
-          onChange={(e) => handleInputChange("status", e.target.value)}
+          name="status"
+          value={currentData.status || ""}
+          onChange={handleInputChange}
         >
           <option value="">Select Status</option>
           <option value="AVAILABLE">AVAILABLE</option>
           <option value="UNDER_MAINTENANCE">UNDER_MAINTENANCE</option>
           <option value="UNAVAILABLE">UNAVAILABLE</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
         </select>
         {errors.status && <span>{errors.status}</span>}
       </div>
@@ -148,10 +186,10 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="text"
           id="imageUrl"
-          value={formData.imageUrl || ""}
-          onChange={(e) => handleInputChange("imageUrl", e.target.value)}
+          name="imageUrl"
+          value={currentData.imageUrl || ""}
+          onChange={handleInputChange}
         />
-        {errors.imageUrl && <span>{errors.imageUrl}</span>}
       </div>
 
       <div>
@@ -159,10 +197,10 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="text"
           id="amenities"
-          value={formData.amenities || ""}
-          onChange={(e) => handleInputChange("amenities", e.target.value)}
+          name="amenities"
+          value={currentData.amenities || ""}
+          onChange={handleInputChange}
         />
-        {errors.amenities && <span>{errors.amenities}</span>}
       </div>
 
       <div>
@@ -170,8 +208,9 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="time"
           id="availableFrom"
-          value={formData.availableFrom || ""}
-          onChange={(e) => handleInputChange("availableFrom", e.target.value)}
+          name="availableFrom"
+          value={currentData.availableFrom || ""}
+          onChange={handleInputChange}
         />
         {errors.availableFrom && <span>{errors.availableFrom}</span>}
       </div>
@@ -181,13 +220,22 @@ const FacilityForm = ({ formData, onChange, onSubmit, submitLabel }) => {
         <input
           type="time"
           id="availableTo"
-          value={formData.availableTo || ""}
-          onChange={(e) => handleInputChange("availableTo", e.target.value)}
+          name="availableTo"
+          value={currentData.availableTo || ""}
+          onChange={handleInputChange}
         />
         {errors.availableTo && <span>{errors.availableTo}</span>}
       </div>
 
-      <button type="submit">{submitLabel}</button>
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? "Saving..." : submitLabel}
+      </button>
+
+      {typeof onCancel === "function" && (
+        <button type="button" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </button>
+      )}
     </form>
   );
 };

@@ -50,10 +50,10 @@ const FacilityTable = ({ facilities, onEdit, onDelete }) => {
               </td>
               <td>{facility.availableFrom} - {facility.availableTo}</td>
               <td>
-                <button onClick={() => onEdit(facility.id)} className="btn btn-edit">
+                <button type="button" onClick={() => onEdit(facility.id)} className="btn btn-edit">
                   Edit
                 </button>
-                <button onClick={() => onDelete(facility.id)} className="btn btn-delete">
+                <button type="button" onClick={() => onDelete(facility.id)} className="btn btn-delete">
                   Delete
                 </button>
               </td>

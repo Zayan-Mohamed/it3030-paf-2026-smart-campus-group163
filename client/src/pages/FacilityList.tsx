@@ -1,8 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Facility, FacilityType, FacilityStatus } from '../types';
+import { Link, useNavigate } from 'react-router-dom';
+import type { Facility, FacilityType, FacilityStatus } from '../types';
+
+const FACILITY_TYPE_OPTIONS: FacilityType[] = [
+  'CONFERENCE_ROOM',
+  'LABORATORY',
+  'SPORTS_HALL',
+  'AUDITORIUM',
+  'STUDY_ROOM',
+  'COMPUTER_LAB',
+  'OTHER'
+];
+
+const FACILITY_STATUS_OPTIONS: FacilityStatus[] = [
+  'AVAILABLE',
+  'UNDER_MAINTENANCE',
+  'UNAVAILABLE'
+];
 
 const FacilityList: React.FC = () => {
+  const navigate = useNavigate();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +38,7 @@ const FacilityList: React.FC = () => {
   const fetchFacilities = async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
 
       if (nameFilter) params.append('name', nameFilter);
@@ -29,12 +47,17 @@ const FacilityList: React.FC = () => {
       if (statusFilter) params.append('status', statusFilter);
       if (minCapacityFilter !== '') params.append('minCapacity', minCapacityFilter.toString());
 
-      const response = await fetch(`/api/facilities?${params.toString()}`);
+      const query = params.toString();
+      const url = query
+        ? `http://localhost:8080/api/facilities?${query}`
+        : 'http://localhost:8080/api/facilities';
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch facilities');
       }
       const data = await response.json();
-      setFacilities(data);
+      setFacilities(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -48,19 +71,28 @@ const FacilityList: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/facilities/${id}`, {
+      setError(null);
+      const response = await fetch(`http://localhost:8080/api/facilities/${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete facility');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to delete facility');
       }
 
-      // Remove from local state
-      setFacilities(facilities.filter(facility => facility.id !== id));
+      setFacilities((prev) => prev.filter((facility) => facility.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete facility');
     }
+  };
+
+  const handleEdit = (id: number) => {
+    navigate(`/dashboard/admin/facilities/${id}/edit`);
+  };
+
+  const handleAdd = () => {
+    navigate('/dashboard/admin/facilities/new');
   };
 
   const clearFilters = () => {
@@ -83,9 +115,9 @@ const FacilityList: React.FC = () => {
     <div className="facility-list">
       <div className="header">
         <h1>Facilities</h1>
-        <Link to="/facilities/new" className="btn btn-primary">
+        <button type="button" onClick={handleAdd} className="btn btn-primary">
           Add New Facility
-        </Link>
+        </button>
       </div>
 
       {/* Search and Filter Bar */}
@@ -111,9 +143,9 @@ const FacilityList: React.FC = () => {
             className="filter-select"
           >
             <option value="">All Types</option>
-            {Object.values(FacilityType).map(type => (
+            {FACILITY_TYPE_OPTIONS.map((type) => (
               <option key={type} value={type}>
-                {type.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                {type.replace('_', ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
               </option>
             ))}
           </select>
@@ -123,9 +155,9 @@ const FacilityList: React.FC = () => {
             className="filter-select"
           >
             <option value="">All Statuses</option>
-            {Object.values(FacilityStatus).map(status => (
+            {FACILITY_STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
-                {status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                {status.replace('_', ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
               </option>
             ))}
           </select>
@@ -176,10 +208,15 @@ const FacilityList: React.FC = () => {
                 <td>{facility.availableFrom} - {facility.availableTo}</td>
                 <td>
                   <div className="action-buttons">
-                    <Link to={`/facilities/${facility.id}/edit`} className="btn btn-sm btn-secondary">
-                      Edit
-                    </Link>
                     <button
+                      type="button"
+                      onClick={() => handleEdit(facility.id)}
+                      className="btn btn-sm btn-secondary"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDelete(facility.id)}
                       className="btn btn-sm btn-danger"
                     >
