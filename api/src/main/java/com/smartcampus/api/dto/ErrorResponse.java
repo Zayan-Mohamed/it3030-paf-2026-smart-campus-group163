@@ -6,10 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Standard error response DTO.
  * Used by GlobalExceptionHandler to return consistent error responses.
+ * Implements OWASP best practices for error handling.
  */
 @Data
 @Builder
@@ -23,14 +25,14 @@ public class ErrorResponse {
     private int status;
     
     /**
-     * Error message (safe for client display)
-     */
-    private String message;
-    
-    /**
      * Error type/category
      */
     private String error;
+    
+    /**
+     * Error message (safe for client display)
+     */
+    private String message;
     
     /**
      * Request path where error occurred
@@ -42,4 +44,9 @@ public class ErrorResponse {
      */
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
+    
+    /**
+     * Additional details (e.g., validation field errors as map)
+     */
+    private Map<String, String> details;
 }

@@ -6,27 +6,72 @@ export interface User {
   roles: string[];
 }
 
-export type FacilityType =
-  | 'CONFERENCE_ROOM'
-  | 'LABORATORY'
-  | 'SPORTS_HALL'
-  | 'AUDITORIUM'
-  | 'STUDY_ROOM'
-  | 'COMPUTER_LAB'
-  | 'OTHER';
+export const FACILITY_TYPES = [
+  'CONFERENCE_ROOM',
+  'LABORATORY',
+  'SPORTS_HALL',
+  'AUDITORIUM',
+  'STUDY_ROOM',
+  'COMPUTER_LAB',
+  'PROJECTOR',
+  'CAMERA',
+  'MEETING_ROOM',
+  'LECTURE_HALL',
+  'OTHER',
+] as const;
 
-export type FacilityStatus = 'AVAILABLE' | 'UNDER_MAINTENANCE' | 'UNAVAILABLE';
+export type FacilityType = (typeof FACILITY_TYPES)[number];
+
+export const FACILITY_STATUSES = [
+  'AVAILABLE',
+  'UNDER_MAINTENANCE',
+  'UNAVAILABLE',
+  'ACTIVE',
+  'OUT_OF_SERVICE',
+] as const;
+
+export type FacilityStatus = (typeof FACILITY_STATUSES)[number];
 
 export interface Facility {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   facilityType: FacilityType;
   location: string;
   capacity: number;
   status: FacilityStatus;
   imageUrl?: string | null;
   amenities?: string | null;
+  availableFrom: string;
+  availableTo: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFacilityRequest {
+  name: string;
+  description?: string;
+  facilityType: FacilityType;
+  location: string;
+  capacity: number;
+  status: FacilityStatus;
+  imageUrl?: string;
+  amenities?: string;
+  availableFrom: string;
+  availableTo: string;
+}
+
+export interface UpdateFacilityRequest {
+  name?: string;
+  description?: string;
+  facilityType?: FacilityType;
+  location?: string;
+  capacity?: number;
+  status?: FacilityStatus;
+  imageUrl?: string;
+  amenities?: string;
+  availableFrom?: string;
+  availableTo?: string;
 }
 
 export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
@@ -84,4 +129,13 @@ export interface Incident {
   status: IncidentStatus;
   imageUrls: string[];
   createdAt: string;
+}
+
+export interface ApiError {
+  status: number;
+  error: string;
+  message: string;
+  path: string;
+  timestamp: string;
+  details?: Record<string, string>;
 }

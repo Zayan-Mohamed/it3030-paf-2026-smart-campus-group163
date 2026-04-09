@@ -42,8 +42,7 @@ public class AdminDashboardController {
     ) {
         log.info("Admin dashboard welcome request from user: {}", userDetails.getUsername());
         
-        // Build response with sample data
-        // TODO: Replace with actual data from services
+        // Placeholder response until dashboard services are wired in.
         AdminDashboardResponse response = AdminDashboardResponse.builder()
                 .message("Welcome Admin!")
                 .adminName(userDetails.getUsername())
@@ -71,7 +70,7 @@ public class AdminDashboardController {
     ) {
         log.info("System statistics request from admin: {}", userDetails.getUsername());
         
-        // TODO: Implement actual statistics logic
+        // Placeholder response until statistics services are wired in.
         return ResponseEntity.ok("System statistics - accessible only to admins");
     }
     
@@ -90,7 +89,7 @@ public class AdminDashboardController {
     ) {
         log.info("Get all users request from admin: {}", userDetails.getUsername());
         
-        // TODO: Implement actual user retrieval logic
+        // Placeholder response until user administration services are wired in.
         return ResponseEntity.ok("All users - admin access only");
     }
     
@@ -109,7 +108,7 @@ public class AdminDashboardController {
     ) {
         log.info("Audit logs request from admin: {}", userDetails.getUsername());
         
-        // TODO: Implement actual audit log retrieval
+        // Placeholder response until audit services are wired in.
         return ResponseEntity.ok("Audit logs - admin access only");
     }
 }

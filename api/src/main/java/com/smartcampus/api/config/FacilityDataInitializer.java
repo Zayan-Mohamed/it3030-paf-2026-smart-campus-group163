@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Configuration
@@ -36,6 +37,8 @@ public class FacilityDataInitializer {
                             .capacity(40)
                             .status(Facility.FacilityStatus.AVAILABLE)
                             .amenities("Projector,Air Conditioning,40 PCs,Whiteboard")
+                            .availableFrom(LocalTime.of(8, 0))
+                            .availableTo(LocalTime.of(17, 0))
                             .build(),
                     Facility.builder()
                             .name("Study Room A")
@@ -45,6 +48,8 @@ public class FacilityDataInitializer {
                             .capacity(8)
                             .status(Facility.FacilityStatus.AVAILABLE)
                             .amenities("Whiteboard,Monitor,Power Outlets")
+                            .availableFrom(LocalTime.of(8, 0))
+                            .availableTo(LocalTime.of(17, 0))
                             .build(),
                     Facility.builder()
                             .name("Main Auditorium")
@@ -54,6 +59,8 @@ public class FacilityDataInitializer {
                             .capacity(250)
                             .status(Facility.FacilityStatus.AVAILABLE)
                             .amenities("Stage,PA System,Projector,Lighting")
+                            .availableFrom(LocalTime.of(8, 0))
+                            .availableTo(LocalTime.of(17, 0))
                             .build(),
                     Facility.builder()
                             .name("Robotics Lab")
@@ -63,6 +70,8 @@ public class FacilityDataInitializer {
                             .capacity(24)
                             .status(Facility.FacilityStatus.AVAILABLE)
                             .amenities("Workbenches,Soldering Stations,Storage")
+                            .availableFrom(LocalTime.of(8, 0))
+                            .availableTo(LocalTime.of(17, 0))
                             .build(),
                     Facility.builder()
                             .name("Seminar Room B")
@@ -72,6 +81,8 @@ public class FacilityDataInitializer {
                             .capacity(20)
                             .status(Facility.FacilityStatus.AVAILABLE)
                             .amenities("Projector,Video Conferencing,Whiteboard")
+                            .availableFrom(LocalTime.of(8, 0))
+                            .availableTo(LocalTime.of(17, 0))
                             .build());
 
             facilityRepository.saveAll(facilities);

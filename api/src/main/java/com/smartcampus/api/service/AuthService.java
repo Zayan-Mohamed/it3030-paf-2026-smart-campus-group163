@@ -36,7 +36,7 @@ public class AuthService {
         userRepository.save(user);
 
         String token = jwtService.generateToken(user);
-        return TokenResponse.builder().token(token).build();
+        return new TokenResponse(token);
     }
 
     public TokenResponse login(LoginRequest request) {
@@ -53,6 +53,6 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(user);
-        return TokenResponse.builder().token(token).build();
+        return new TokenResponse(token);
     }
 }

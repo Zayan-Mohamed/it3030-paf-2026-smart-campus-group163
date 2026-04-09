@@ -66,7 +66,7 @@ export const AdminDashboard = () => {
             <span className="nav-icon"><Users size={20} /></span>
             {sidebarOpen && <span>User Management</span>}
           </Link>
-          <Link to="/admin/facilities" className="nav-item">
+          <Link to="/dashboard/admin/facilities" className="nav-item">
             <span className="nav-icon"><Building2 size={20} /></span>
             {sidebarOpen && <span>Facilities</span>}
           </Link>

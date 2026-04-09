@@ -42,8 +42,7 @@ public class StudentDashboardController {
     ) {
         log.info("Student dashboard welcome request from user: {}", userDetails.getUsername());
         
-        // Build response with sample data
-        // TODO: Replace with actual data from services
+        // Placeholder response until dashboard services are wired in.
         StudentDashboardResponse response = StudentDashboardResponse.builder()
                 .message("Welcome to your Student Dashboard!")
                 .studentName(userDetails.getUsername())
@@ -70,7 +69,7 @@ public class StudentDashboardController {
     ) {
         log.info("Bookings summary request from user: {}", userDetails.getUsername());
         
-        // TODO: Implement actual booking summary logic
+        // Placeholder response until booking services are wired in.
         return ResponseEntity.ok("Bookings summary for: " + userDetails.getUsername());
     }
     
@@ -89,7 +88,7 @@ public class StudentDashboardController {
     ) {
         log.info("Incidents summary request from user: {}", userDetails.getUsername());
         
-        // TODO: Implement actual incident summary logic
+        // Placeholder response until incident services are wired in.
         return ResponseEntity.ok("Incidents summary for: " + userDetails.getUsername());
     }
 }
