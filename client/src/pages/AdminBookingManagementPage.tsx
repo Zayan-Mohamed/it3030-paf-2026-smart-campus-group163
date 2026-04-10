@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clipboard,
-  Eye,
   FileText,
   Home,
   LogOut,
@@ -56,10 +55,13 @@ export const AdminBookingManagementPage = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [statusFilter, setStatusFilter] = useState<BookingStatus | ''>('');
   const [facilityFilter, setFacilityFilter] = useState<number | ''>('');
+  const [bookedDateFilter, setBookedDateFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState<Record<number, string>>({});
+
+  const getBookingDateKey = (dateTime: string) => dateTime.slice(0, 10);
 
   const handleLogout = () => {
     logout();
@@ -98,12 +100,22 @@ export const AdminBookingManagementPage = () => {
     void loadData();
   }, [token, statusFilter, facilityFilter]);
 
+  const bookedDateOptions = useMemo(() => {
+    const dateSet = new Set(bookings.map((booking) => getBookingDateKey(booking.startTime)));
+    return Array.from(dateSet).sort((left, right) => right.localeCompare(left));
+  }, [bookings]);
+
+  const visibleBookings = useMemo(
+    () => bookings.filter((booking) => !bookedDateFilter || getBookingDateKey(booking.startTime) === bookedDateFilter),
+    [bookings, bookedDateFilter]
+  );
+
   const summary = useMemo(() => ({
-    total: bookings.length,
-    pending: bookings.filter((booking) => booking.status === 'PENDING').length,
-    approved: bookings.filter((booking) => booking.status === 'APPROVED').length,
-    reviewNotes: bookings.filter((booking) => booking.staffComments).length,
-  }), [bookings]);
+    total: visibleBookings.length,
+    pending: visibleBookings.filter((booking) => booking.status === 'PENDING').length,
+    approved: visibleBookings.filter((booking) => booking.status === 'APPROVED').length,
+    reviewNotes: visibleBookings.filter((booking) => booking.staffComments).length,
+  }), [visibleBookings]);
 
   const handleReview = async (bookingId: number, status: 'APPROVED' | 'REJECTED') => {
     if (!token) {
@@ -266,7 +278,7 @@ export const AdminBookingManagementPage = () => {
         <Card className="mb-6 border-slate-200/80 shadow-lg shadow-slate-900/5">
           <CardHeader>
             <CardTitle className="text-lg">Filters</CardTitle>
-            <CardDescription>Filter by workflow status or facility to focus on the requests you need to process.</CardDescription>
+            <CardDescription>Filter by workflow status, facility, or booked date to focus on the requests you need to process.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
@@ -297,11 +309,20 @@ export const AdminBookingManagementPage = () => {
                 </Select>
               </div>
 
-              <div className="flex items-end">
-                <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading} className="w-full">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh List
-                </Button>
+              <div className="space-y-2">
+                <label htmlFor="bookedDateFilter" className="text-sm font-medium text-slate-700">Date</label>
+                <Select
+                  id="bookedDateFilter"
+                  value={bookedDateFilter}
+                  onChange={(event) => setBookedDateFilter(event.target.value)}
+                >
+                  <option value="">All booked dates</option>
+                  {bookedDateOptions.map((dateValue) => (
+                    <option key={dateValue} value={dateValue}>
+                      {new Intl.DateTimeFormat('en-LK', { dateStyle: 'medium' }).format(new Date(`${dateValue}T00:00:00`))}
+                    </option>
+                  ))}
+                </Select>
               </div>
             </div>
           </CardContent>
@@ -318,13 +339,13 @@ export const AdminBookingManagementPage = () => {
           <Card>
             <CardContent className="py-12 text-center text-sm text-slate-500">Loading booking requests...</CardContent>
           </Card>
-        ) : bookings.length === 0 ? (
+        ) : visibleBookings.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-sm text-slate-500">No bookings matched the current filters.</CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-            {bookings.map((booking) => {
+            {visibleBookings.map((booking) => {
               const cancellationDeadline = getApprovedCancellationDeadline(booking.reviewedAt);
               const canStillCancel = isApprovalCancellationWindowOpen(booking.reviewedAt);
 
@@ -339,7 +360,7 @@ export const AdminBookingManagementPage = () => {
                             {bookingStatusLabel(booking.status)}
                           </span>
                           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                            Student: {booking.userName}
+                            Student: {booking.userName}{booking.userEmail ? ` (${booking.userEmail})` : ''}
                           </span>
                         </div>
 
@@ -379,12 +400,6 @@ export const AdminBookingManagementPage = () => {
                       </div>
 
                       <div className="space-y-3 xl:w-[340px]">
-                        <Link to={`/bookings/${booking.id}`}>
-                          <Button variant="outline" className="w-full">
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </Button>
-                        </Link>
 
                         {booking.status === 'PENDING' && (
                           <>
