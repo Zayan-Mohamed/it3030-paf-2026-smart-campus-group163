@@ -1,12 +1,33 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, CalendarDays, Eye, Pencil, Plus, RefreshCw, Trash2, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Building2,
+  Calendar,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  FileText,
+  Home,
+  LogOut,
+  Map,
+  PartyPopper,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingStatusClasses, bookingStatusLabel, cancelBooking, deleteBooking, formatDateTime, getBookings, getFacilities } from '../lib/bookings';
 import type { Booking, BookingStatus, Facility } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select';
+import '../styles/Dashboard.css';
 
 const bookingStatuses: Array<{ value: BookingStatus | ''; label: string }> = [
   { value: '', label: 'All statuses' },
@@ -18,7 +39,9 @@ const bookingStatuses: Array<{ value: BookingStatus | ''; label: string }> = [
 ];
 
 export const BookingListPage = () => {
-  const { token } = useAuth();
+  const { token, user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [statusFilter, setStatusFilter] = useState<BookingStatus | ''>('');
@@ -26,6 +49,11 @@ export const BookingListPage = () => {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const loadData = async () => {
     if (!token) {
@@ -87,159 +115,214 @@ export const BookingListPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Booking List</h1>
-          <p className="mt-2 text-sm text-slate-600">View, track, update, cancel, and delete your booking requests.</p>
+    <div className="dashboard-layout">
+      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`}>
+        <div className="sidebar-header">
+          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+          </button>
+          {sidebarOpen && <h2 className="sidebar-title">Student Portal</h2>}
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/bookings/calendar">
-            <Button variant="outline">
-              <CalendarDays className="mr-2 h-4 w-4" />
-              Calendar
-            </Button>
+
+        <nav className="sidebar-nav">
+          <Link to="/dashboard/student" className="nav-item">
+            <span className="nav-icon"><Home size={20} /></span>
+            {sidebarOpen && <span>Dashboard</span>}
           </Link>
-          <Link to="/bookings/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Booking
-            </Button>
+          <Link to="/bookings" className="nav-item active">
+            <span className="nav-icon"><Calendar size={20} /></span>
+            {sidebarOpen && <span>My Bookings</span>}
           </Link>
-        </div>
-      </div>
+          <Link to="/incidents" className="nav-item">
+            <span className="nav-icon"><AlertTriangle size={20} /></span>
+            {sidebarOpen && <span>My Incidents</span>}
+          </Link>
+          <Link to="/facilities" className="nav-item">
+            <span className="nav-icon"><Building2 size={20} /></span>
+            {sidebarOpen && <span>Browse Facilities</span>}
+          </Link>
+          <Link to="/events" className="nav-item">
+            <span className="nav-icon"><PartyPopper size={20} /></span>
+            {sidebarOpen && <span>Campus Events</span>}
+          </Link>
+          <Link to="/map" className="nav-item">
+            <span className="nav-icon"><Map size={20} /></span>
+            {sidebarOpen && <span>Campus Map</span>}
+          </Link>
+         
+        </nav>
 
-      <Card className="mb-6 border-slate-200/80 shadow-lg shadow-slate-900/5">
-        <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
-          <CardDescription>Use status and facility filters to narrow your booking list.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <label htmlFor="statusFilter" className="text-sm font-medium text-slate-700">Status</label>
-              <Select id="statusFilter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as BookingStatus | '')}>
-                {bookingStatuses.map((status) => (
-                  <option key={status.label} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </Select>
+        {sidebarOpen && (
+          <div className="sidebar-footer">
+            <div className="user-info">
+              {user?.pictureUrl && <img src={user.pictureUrl} alt="Profile" className="user-avatar" />}
+              <div className="user-details">
+                <p className="user-name">{user?.name}</p>
+                <p className="user-role">Student</p>
+              </div>
             </div>
+            <button onClick={handleLogout} className="logout-btn">
+              <LogOut size={20} /> Logout
+            </button>
+          </div>
+        )}
+      </aside>
 
-            <div className="space-y-2">
-              <label htmlFor="facilityFilter" className="text-sm font-medium text-slate-700">Facility</label>
-              <Select
-                id="facilityFilter"
-                value={facilityFilter === '' ? '' : String(facilityFilter)}
-                onChange={(event) => setFacilityFilter(event.target.value ? Number(event.target.value) : '')}
-              >
-                <option value="">All facilities</option>
-                {facilities.map((facility) => (
-                  <option key={facility.id} value={facility.id}>
-                    {facility.name}
-                  </option>
-                ))}
-              </Select>
+      <main className="dashboard-main">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Booking List</h1>
             </div>
-
-            <div className="flex items-end">
-              <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading} className="w-full">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/bookings/calendar">
+                <Button variant="outline">
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  Calendar
+                </Button>
+              </Link>
+              <Link to="/bookings/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Booking
+                </Button>
+              </Link>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {error && (
-        <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          <AlertCircle className="mt-0.5 h-4 w-4" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {loading ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-slate-500">Loading bookings...</CardContent>
-        </Card>
-      ) : bookings.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-lg font-medium text-slate-900">No bookings found</p>
-            <p className="mt-2 text-sm text-slate-500">Create your first booking request to get started.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {bookings.map((booking) => (
-            <Card key={booking.id} className="border-slate-200/80 shadow-lg shadow-slate-900/5">
-              <CardContent className="pt-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-xl font-semibold text-slate-900">{booking.facilityName}</h2>
-                      <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${bookingStatusClasses(booking.status)}`}>
-                        {bookingStatusLabel(booking.status)}
-                      </span>
-                    </div>
-
-                    <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-                      <p><span className="font-medium text-slate-700">Location:</span> {booking.facilityLocation}</p>
-                      <p><span className="font-medium text-slate-700">Attendees:</span> {booking.numberOfAttendees}</p>
-                      <p><span className="font-medium text-slate-700">Start:</span> {formatDateTime(booking.startTime)}</p>
-                      <p><span className="font-medium text-slate-700">End:</span> {formatDateTime(booking.endTime)}</p>
-                    </div>
-
-                    <p className="text-sm text-slate-600">
-                      <span className="font-medium text-slate-700">Purpose:</span> {booking.purpose}
-                    </p>
-
-                    {booking.staffComments && (
-                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                        <span className="font-medium">Review note:</span> {booking.staffComments}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 lg:w-72 lg:justify-end">
-                    <Link to={`/bookings/${booking.id}`}>
-                      <Button variant="outline">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Details
-                      </Button>
-                    </Link>
-
-                    {booking.canEdit && (
-                      <Link to={`/bookings/${booking.id}/edit`}>
-                        <Button variant="outline">
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </Button>
-                      </Link>
-                    )}
-
-                    {booking.canCancel && booking.status === 'APPROVED' && (
-                      <Button type="button" variant="outline" onClick={() => void handleCancel(booking.id)} disabled={actionId === booking.id}>
-                        <XCircle className="mr-2 h-4 w-4" />
-                        {actionId === booking.id ? 'Cancelling...' : 'Cancel'}
-                      </Button>
-                    )}
-
-                    {booking.canDelete && (
-                      <Button type="button" variant="destructive" onClick={() => void handleDelete(booking.id)} disabled={actionId === booking.id}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {actionId === booking.id ? 'Deleting...' : 'Delete'}
-                      </Button>
-                    )}
-                  </div>
+          <Card className="mb-6 border-slate-200/80 shadow-lg shadow-slate-900/5">
+            <CardHeader>
+              <CardTitle className="text-lg">Filters</CardTitle>
+              <CardDescription>Use status and facility filters to narrow your booking list.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label htmlFor="statusFilter" className="text-sm font-medium text-slate-700">Status</label>
+                  <Select id="statusFilter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as BookingStatus | '')}>
+                    {bookingStatuses.map((status) => (
+                      <option key={status.label} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="facilityFilter" className="text-sm font-medium text-slate-700">Facility</label>
+                  <Select
+                    id="facilityFilter"
+                    value={facilityFilter === '' ? '' : String(facilityFilter)}
+                    onChange={(event) => setFacilityFilter(event.target.value ? Number(event.target.value) : '')}
+                  >
+                    <option value="">All facilities</option>
+                    {facilities.map((facility) => (
+                      <option key={facility.id} value={facility.id}>
+                        {facility.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading} className="w-full">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {error && (
+            <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {loading ? (
+            <Card>
+              <CardContent className="py-12 text-center text-sm text-slate-500">Loading bookings...</CardContent>
+            </Card>
+          ) : bookings.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-lg font-medium text-slate-900">No bookings found</p>
+                <p className="mt-2 text-sm text-slate-500">Create your first booking request to get started.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="grid gap-4">
+              {bookings.map((booking) => (
+                <Card key={booking.id} className="border-slate-200/80 shadow-lg shadow-slate-900/5">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h2 className="text-xl font-semibold text-slate-900">{booking.facilityName}</h2>
+                          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${bookingStatusClasses(booking.status)}`}>
+                            {bookingStatusLabel(booking.status)}
+                          </span>
+                        </div>
+
+                        <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
+                          <p><span className="font-medium text-slate-700">Location:</span> {booking.facilityLocation}</p>
+                          <p><span className="font-medium text-slate-700">Attendees:</span> {booking.numberOfAttendees}</p>
+                          <p><span className="font-medium text-slate-700">Start:</span> {formatDateTime(booking.startTime)}</p>
+                          <p><span className="font-medium text-slate-700">End:</span> {formatDateTime(booking.endTime)}</p>
+                        </div>
+
+                        <p className="text-sm text-slate-600">
+                          <span className="font-medium text-slate-700">Purpose:</span> {booking.purpose}
+                        </p>
+
+                        {booking.staffComments && (
+                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                            <span className="font-medium">Review note:</span> {booking.staffComments}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 lg:w-72 lg:justify-end">
+                        <Link to={`/bookings/${booking.id}`}>
+                          <Button variant="outline">
+                            <Eye className="mr-2 h-4 w-4" />
+                            Details
+                          </Button>
+                        </Link>
+
+                        {booking.canEdit && (
+                          <Link to={`/bookings/${booking.id}/edit`}>
+                            <Button variant="outline">
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </Button>
+                          </Link>
+                        )}
+
+                        {booking.canCancel && booking.status === 'APPROVED' && (
+                          <Button type="button" variant="outline" onClick={() => void handleCancel(booking.id)} disabled={actionId === booking.id}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            {actionId === booking.id ? 'Cancelling...' : 'Cancel'}
+                          </Button>
+                        )}
+
+                        {booking.canDelete && (
+                          <Button type="button" variant="destructive" onClick={() => void handleDelete(booking.id)} disabled={actionId === booking.id}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {actionId === booking.id ? 'Deleting...' : 'Delete'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </main>
     </div>
   );
 };
