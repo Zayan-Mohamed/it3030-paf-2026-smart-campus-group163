@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  FileText,
   Home,
   LogOut,
   Map,

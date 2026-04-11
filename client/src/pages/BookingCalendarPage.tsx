@@ -8,7 +8,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Home,
   LogOut,
   Map,
