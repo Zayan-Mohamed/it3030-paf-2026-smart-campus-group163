@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, CalendarDays, Save } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Building2,
+  Calendar,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  LogOut,
+  Map,
+  PartyPopper,
+  Save,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   checkBookingConflicts,
@@ -20,6 +33,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
+import '../styles/Dashboard.css';
 
 type FormState = {
   facilityId: string;
@@ -38,10 +52,11 @@ const initialForm: FormState = {
 };
 
 export const BookingFormPage = () => {
-  const { token } = useAuth();
+  const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const { bookingId } = useParams<{ bookingId: string }>();
   const isEditMode = Boolean(bookingId);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [form, setForm] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(true);
@@ -50,6 +65,11 @@ export const BookingFormPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [conflictResult, setConflictResult] = useState<BookingConflictResult | null>(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     const loadPage = async () => {
@@ -193,149 +213,206 @@ export const BookingFormPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <Card><CardContent className="py-12 text-center text-sm text-slate-500">Loading booking form...</CardContent></Card>
-      </div>
-    );
-  }
+  const formContent = (
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {loading ? (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-slate-500">Loading booking form...</CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                {isEditMode ? 'Update Booking' : 'New Booking'}
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                {isEditMode
+                  ? 'Adjust the booking details and re-run conflict validation before resubmitting.'
+                  : 'Create a booking request with date, time, purpose, and expected attendees.'}
+              </p>
+            </div>
+
+            <Link to="/bookings/calendar">
+              <Button variant="outline">
+                <CalendarDays className="mr-2 h-4 w-4" />
+                View Calendar
+              </Button>
+            </Link>
+          </div>
+
+          <Card className="border-slate-200/80 shadow-lg shadow-slate-900/5">
+            <CardHeader>
+              <CardTitle className="text-xl">{isEditMode ? 'Edit booking request' : 'Booking request form'}</CardTitle>
+              <CardDescription>Conflict checking runs automatically when you choose the facility and time range.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <AlertCircle className="mt-0.5 h-4 w-4" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="facilityId">Facility</Label>
+                    <Select id="facilityId" value={form.facilityId} onChange={(event) => updateField('facilityId', event.target.value)}>
+                      <option value="">Select a facility</option>
+                      {facilities.map((facility) => (
+                        <option key={facility.id} value={facility.id}>
+                          {facility.name} - {facility.location}
+                        </option>
+                      ))}
+                    </Select>
+                    {fieldErrors.facilityId && <p className="text-xs text-red-600">{fieldErrors.facilityId}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="numberOfAttendees">Expected Attendees</Label>
+                    <Input
+                      id="numberOfAttendees"
+                      type="number"
+                      min="1"
+                      value={form.numberOfAttendees}
+                      onChange={(event) => updateField('numberOfAttendees', event.target.value)}
+                      placeholder="25"
+                    />
+                    {fieldErrors.numberOfAttendees && <p className="text-xs text-red-600">{fieldErrors.numberOfAttendees}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <Input id="startTime" type="datetime-local" value={form.startTime} onChange={(event) => updateField('startTime', event.target.value)} />
+                    {fieldErrors.startTime && <p className="text-xs text-red-600">{fieldErrors.startTime}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">End Time</Label>
+                    <Input id="endTime" type="datetime-local" value={form.endTime} onChange={(event) => updateField('endTime', event.target.value)} />
+                    {fieldErrors.endTime && <p className="text-xs text-red-600">{fieldErrors.endTime}</p>}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="purpose">Purpose</Label>
+                  <Textarea
+                    id="purpose"
+                    value={form.purpose}
+                    onChange={(event) => updateField('purpose', event.target.value)}
+                    placeholder="Explain why you need this facility and what activity will happen."
+                    className="min-h-32"
+                  />
+                  {fieldErrors.purpose && <p className="text-xs text-red-600">{fieldErrors.purpose}</p>}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Conflict Checking</p>
+                      <p className="text-xs text-slate-500">The system checks overlapping bookings for the same resource.</p>
+                    </div>
+                    {checkingConflicts && <span className="text-xs font-medium text-slate-500">Checking...</span>}
+                  </div>
+
+                  {!form.facilityId || !form.startTime || !form.endTime ? (
+                    <p className="text-sm text-slate-500">Select a facility, start time, and end time to run conflict checking.</p>
+                  ) : conflictResult?.hasConflict ? (
+                    <div className="space-y-3">
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        {conflictResult.message}
+                      </div>
+                      <div className="space-y-2">
+                        {conflictResult.conflictingBookings.map((conflict) => (
+                          <div key={conflict.id} className="rounded-lg border border-red-100 bg-white p-3 text-sm text-slate-700">
+                            <p className="font-medium text-slate-900">{conflict.facilityName}</p>
+                            <p>{formatDateTime(conflict.startTime)} to {formatDateTime(conflict.endTime)}</p>
+                            <p>Status: {conflict.status}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : conflictResult ? (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+                      {conflictResult.message}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Conflict result will appear here.</p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-3">
+                  <Link to={isEditMode && bookingId ? `/bookings/${bookingId}` : '/bookings'}>
+                    <Button type="button" variant="outline">Cancel</Button>
+                  </Link>
+                  <Button type="submit" disabled={submitting || checkingConflicts}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {submitting ? 'Saving...' : isEditMode ? 'Update Booking' : 'Create Booking'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            {isEditMode ? 'Update Booking' : 'New Booking'}
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {isEditMode
-              ? 'Adjust the booking details and re-run conflict validation before resubmitting.'
-              : 'Create a booking request with date, time, purpose, and expected attendees.'}
-          </p>
+    <div className="dashboard-layout">
+      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`}>
+        <div className="sidebar-header">
+          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+          </button>
+          {sidebarOpen && <h2 className="sidebar-title">Student Portal</h2>}
         </div>
 
-        <Link to="/bookings/calendar">
-          <Button variant="outline">
-            <CalendarDays className="mr-2 h-4 w-4" />
-            View Calendar
-          </Button>
-        </Link>
-      </div>
+        <nav className="sidebar-nav">
+          <Link to="/dashboard/student" className="nav-item">
+            <span className="nav-icon"><Home size={20} /></span>
+            {sidebarOpen && <span>Dashboard</span>}
+          </Link>
+          <Link to="/bookings" className="nav-item active">
+            <span className="nav-icon"><Calendar size={20} /></span>
+            {sidebarOpen && <span>My Bookings</span>}
+          </Link>
+          <Link to="/incidents" className="nav-item">
+            <span className="nav-icon"><AlertTriangle size={20} /></span>
+            {sidebarOpen && <span>My Incidents</span>}
+          </Link>
+          <Link to="/facilities" className="nav-item">
+            <span className="nav-icon"><Building2 size={20} /></span>
+            {sidebarOpen && <span>Browse Facilities</span>}
+          </Link>
+          <Link to="/events" className="nav-item">
+            <span className="nav-icon"><PartyPopper size={20} /></span>
+            {sidebarOpen && <span>Campus Events</span>}
+          </Link>
+          <Link to="/map" className="nav-item">
+            <span className="nav-icon"><Map size={20} /></span>
+            {sidebarOpen && <span>Campus Map</span>}
+          </Link>
+        </nav>
 
-      <Card className="border-slate-200/80 shadow-lg shadow-slate-900/5">
-        <CardHeader>
-          <CardTitle className="text-xl">{isEditMode ? 'Edit booking request' : 'Booking request form'}</CardTitle>
-          <CardDescription>Conflict checking runs automatically when you choose the facility and time range.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <AlertCircle className="mt-0.5 h-4 w-4" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="facilityId">Facility</Label>
-                <Select id="facilityId" value={form.facilityId} onChange={(event) => updateField('facilityId', event.target.value)}>
-                  <option value="">Select a facility</option>
-                  {facilities.map((facility) => (
-                    <option key={facility.id} value={facility.id}>
-                      {facility.name} - {facility.location}
-                    </option>
-                  ))}
-                </Select>
-                {fieldErrors.facilityId && <p className="text-xs text-red-600">{fieldErrors.facilityId}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="numberOfAttendees">Expected Attendees</Label>
-                <Input
-                  id="numberOfAttendees"
-                  type="number"
-                  min="1"
-                  value={form.numberOfAttendees}
-                  onChange={(event) => updateField('numberOfAttendees', event.target.value)}
-                  placeholder="25"
-                />
-                {fieldErrors.numberOfAttendees && <p className="text-xs text-red-600">{fieldErrors.numberOfAttendees}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input id="startTime" type="datetime-local" value={form.startTime} onChange={(event) => updateField('startTime', event.target.value)} />
-                {fieldErrors.startTime && <p className="text-xs text-red-600">{fieldErrors.startTime}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <Input id="endTime" type="datetime-local" value={form.endTime} onChange={(event) => updateField('endTime', event.target.value)} />
-                {fieldErrors.endTime && <p className="text-xs text-red-600">{fieldErrors.endTime}</p>}
+        {sidebarOpen && (
+          <div className="sidebar-footer">
+            <div className="user-info">
+              {user?.pictureUrl && <img src={user.pictureUrl} alt="Profile" className="user-avatar" />}
+              <div className="user-details">
+                <p className="user-name">{user?.name}</p>
+                <p className="user-role">Student</p>
               </div>
             </div>
+            <button onClick={handleLogout} className="logout-btn">
+              <LogOut size={20} /> Logout
+            </button>
+          </div>
+        )}
+      </aside>
 
-            <div className="space-y-2">
-              <Label htmlFor="purpose">Purpose</Label>
-              <Textarea
-                id="purpose"
-                value={form.purpose}
-                onChange={(event) => updateField('purpose', event.target.value)}
-                placeholder="Explain why you need this facility and what activity will happen."
-                className="min-h-32"
-              />
-              {fieldErrors.purpose && <p className="text-xs text-red-600">{fieldErrors.purpose}</p>}
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Conflict Checking</p>
-                  <p className="text-xs text-slate-500">The system checks overlapping bookings for the same resource.</p>
-                </div>
-                {checkingConflicts && <span className="text-xs font-medium text-slate-500">Checking...</span>}
-              </div>
-
-              {!form.facilityId || !form.startTime || !form.endTime ? (
-                <p className="text-sm text-slate-500">Select a facility, start time, and end time to run conflict checking.</p>
-              ) : conflictResult?.hasConflict ? (
-                <div className="space-y-3">
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {conflictResult.message}
-                  </div>
-                  <div className="space-y-2">
-                    {conflictResult.conflictingBookings.map((conflict) => (
-                      <div key={conflict.id} className="rounded-lg border border-red-100 bg-white p-3 text-sm text-slate-700">
-                        <p className="font-medium text-slate-900">{conflict.facilityName}</p>
-                        <p>{formatDateTime(conflict.startTime)} to {formatDateTime(conflict.endTime)}</p>
-                        <p>Status: {conflict.status}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : conflictResult ? (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-                  {conflictResult.message}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">Conflict result will appear here.</p>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-3">
-              <Link to={isEditMode && bookingId ? `/bookings/${bookingId}` : '/bookings'}>
-                <Button type="button" variant="outline">Cancel</Button>
-              </Link>
-              <Button type="submit" disabled={submitting || checkingConflicts}>
-                <Save className="mr-2 h-4 w-4" />
-                {submitting ? 'Saving...' : isEditMode ? 'Update Booking' : 'Create Booking'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <main className="dashboard-main">{formContent}</main>
     </div>
   );
 };
