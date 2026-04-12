@@ -42,6 +42,7 @@ export interface Booking {
   facilityCapacity: number;
   userId: number;
   userName: string;
+  userEmail: string;
   startTime: string;
   endTime: string;
   purpose: string;

@@ -307,6 +307,9 @@ export const ManageBookingsPage = () => {
                           <p className="text-sm text-slate-600">
                             <span className="font-medium text-slate-700">Student:</span> {booking.userName}
                           </p>
+                          <p className="text-sm text-slate-600">
+                            <span className="font-medium text-slate-700">Email:</span> {booking.userEmail}
+                          </p>
                         </div>
                       </div>
 

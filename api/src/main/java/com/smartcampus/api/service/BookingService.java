@@ -11,6 +11,7 @@ import com.smartcampus.api.model.Facility;
 import com.smartcampus.api.model.Role;
 import com.smartcampus.api.model.User;
 import com.smartcampus.api.repository.BookingRepository;
+import com.smartcampus.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class BookingService {
             Booking.BookingStatus.APPROVED);
 
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
     private final FacilityService facilityService;
 
     @Transactional(readOnly = true)
@@ -335,6 +337,7 @@ public class BookingService {
                 .facilityCapacity(booking.getFacility().getCapacity())
                 .userId(booking.getUser().getId())
                 .userName(privileged ? booking.getUser().getName() : currentUser.getName())
+                .userEmail(resolveBookedUserEmail(booking, currentUser, privileged))
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
                 .purpose(booking.getPurpose())
@@ -352,5 +355,24 @@ public class BookingService {
                 .canDelete(canDelete)
                 .canCancel(canCancel)
                 .build();
+    }
+
+    private String resolveBookedUserEmail(Booking booking, User currentUser, boolean privileged) {
+        if (!privileged) {
+            return currentUser.getEmail();
+        }
+
+        String mappedEmail = booking.getUser() != null ? normalizeOptional(booking.getUser().getEmail()) : null;
+        if (mappedEmail != null) {
+            return mappedEmail;
+        }
+
+        if (booking.getUser() == null || booking.getUser().getId() == null) {
+            return null;
+        }
+
+        return userRepository.findById(booking.getUser().getId())
+                .map(User::getEmail)
+                .orElse(null);
     }
 }

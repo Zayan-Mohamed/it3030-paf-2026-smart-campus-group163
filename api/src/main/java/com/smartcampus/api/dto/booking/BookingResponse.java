@@ -23,6 +23,7 @@ public class BookingResponse {
     private Integer facilityCapacity;
     private Long userId;
     private String userName;
+    private String userEmail;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String purpose;
