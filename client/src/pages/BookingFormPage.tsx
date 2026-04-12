@@ -22,7 +22,6 @@ import {
   formatDateTime,
   fromLocalDateTimeInputValue,
   getBooking,
-  getFacilities,
   toLocalDateTimeInputValue,
   updateBooking,
 } from '../lib/bookings';
@@ -51,6 +50,35 @@ const initialForm: FormState = {
   numberOfAttendees: '',
 };
 
+const API_BASE_URL = 'http://localhost:8080';
+
+const optionLabel = (value: string) => value.replaceAll('_', ' ');
+
+const uniqueOptions = (values: string[]) => [...new Set(values)].sort((first, second) => first.localeCompare(second));
+
+const mapFacilityResponse = (value: unknown): Facility[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value as Facility[];
+};
+
+async function fetchFacilities(token: string): Promise<Facility[]> {
+  const response = await fetch(`${API_BASE_URL}/api/facilities`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.ok) {
+    return mapFacilityResponse(await response.json());
+  }
+
+  const error = (await response.json().catch(() => null)) as { message?: string; error?: string } | null;
+  throw new Error(error?.message ?? error?.error ?? 'Failed to load facilities');
+}
+
 export const BookingFormPage = () => {
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -65,6 +93,9 @@ export const BookingFormPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [conflictResult, setConflictResult] = useState<BookingConflictResult | null>(null);
+  const [selectedName, setSelectedName] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
 
   const handleLogout = () => {
     logout();
@@ -82,7 +113,7 @@ export const BookingFormPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const facilityData = await getFacilities(token);
+        const facilityData = await fetchFacilities(token);
         setFacilities(facilityData);
 
         if (bookingId) {
@@ -94,6 +125,9 @@ export const BookingFormPage = () => {
             purpose: booking.purpose,
             numberOfAttendees: String(booking.numberOfAttendees),
           });
+          setSelectedName(booking.facilityName);
+          setSelectedType(booking.facilityType);
+          setSelectedLocation(booking.facilityLocation);
         }
       } catch (fetchError) {
         setError(fetchError instanceof Error ? fetchError.message : 'Failed to load booking form.');
@@ -149,6 +183,49 @@ export const BookingFormPage = () => {
     setForm((previous) => ({ ...previous, [field]: value }));
     setFieldErrors((previous) => ({ ...previous, [field]: undefined }));
     setError(null);
+  };
+
+  const facilitiesForSelectedName = selectedName
+    ? facilities.filter((facility) => facility.name === selectedName)
+    : facilities;
+
+  const facilitiesForSelectedType = selectedType
+    ? facilitiesForSelectedName.filter((facility) => facility.facilityType === selectedType)
+    : facilitiesForSelectedName;
+
+  const nameOptions = uniqueOptions(facilities.map((facility) => facility.name));
+  const typeOptions = uniqueOptions(facilitiesForSelectedName.map((facility) => facility.facilityType));
+  const locationOptions = uniqueOptions(facilitiesForSelectedType.map((facility) => facility.location));
+
+  const resolveFacilityId = (name: string, type: string, location: string) => {
+    if (!name || !type || !location) {
+      updateField('facilityId', '');
+      return;
+    }
+
+    const match = facilities.find(
+      (facility) => facility.name === name && facility.facilityType === type && facility.location === location
+    );
+
+    updateField('facilityId', match ? String(match.id) : '');
+  };
+
+  const handleNameChange = (name: string) => {
+    setSelectedName(name);
+    setSelectedType('');
+    setSelectedLocation('');
+    updateField('facilityId', '');
+  };
+
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    setSelectedLocation('');
+    resolveFacilityId(selectedName, type, '');
+  };
+
+  const handleLocationChange = (location: string) => {
+    setSelectedLocation(location);
+    resolveFacilityId(selectedName, selectedType, location);
   };
 
   const validate = () => {
@@ -257,16 +334,40 @@ export const BookingFormPage = () => {
 
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="facilityId">Facility</Label>
-                    <Select id="facilityId" value={form.facilityId} onChange={(event) => updateField('facilityId', event.target.value)}>
-                      <option value="">Select a facility</option>
-                      {facilities.map((facility) => (
-                        <option key={facility.id} value={facility.id}>
-                          {facility.name} - {facility.location}
+                    <Label htmlFor="facilityName">Name</Label>
+                    <Select id="facilityName" value={selectedName} onChange={(event) => handleNameChange(event.target.value)}>
+                      <option value="">Select a name</option>
+                      {nameOptions.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
                         </option>
                       ))}
                     </Select>
-                    {fieldErrors.facilityId && <p className="text-xs text-red-600">{fieldErrors.facilityId}</p>}
+                    {fieldErrors.facilityId && <p className="text-xs text-red-600">Select Name, Type, and Location</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="facilityType">Type</Label>
+                    <Select id="facilityType" value={selectedType} onChange={(event) => handleTypeChange(event.target.value)}>
+                      <option value="">Select a type</option>
+                      {typeOptions.map((type) => (
+                        <option key={type} value={type}>
+                          {optionLabel(type)}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="facilityLocation">Location</Label>
+                    <Select id="facilityLocation" value={selectedLocation} onChange={(event) => handleLocationChange(event.target.value)}>
+                      <option value="">Select a location</option>
+                      {locationOptions.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
 
                   <div className="space-y-2">

@@ -45,7 +45,7 @@ function buildQuery(filters: Record<string, string | number | undefined>) {
 }
 
 export async function getFacilities(token: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/facilities`, {
+  const response = await fetch(`${API_BASE_URL}/api/facilities`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
