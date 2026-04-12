@@ -50,6 +50,9 @@ export interface Booking {
   staffComments?: string | null;
   reviewedByName?: string | null;
   reviewedAt?: string | null;
+  adminCancelReason?: string | null;
+  cancelledByName?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
   canEdit: boolean;

@@ -74,6 +74,10 @@ export const AdminDashboard = () => {
             <span className="nav-icon"><AlertTriangle size={20} /></span>
             {sidebarOpen && <span>All Incidents</span>}
           </Link>
+          <Link to="/admin/bookings" className="nav-item">
+            <span className="nav-icon"><Calendar size={20} /></span>
+            {sidebarOpen && <span>Manage Bookings</span>}
+          </Link>
           <Link to="/admin/analytics" className="nav-item">
             <span className="nav-icon"><BarChart3 size={20} /></span>
             {sidebarOpen && <span>Analytics</span>}

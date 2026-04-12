@@ -8,6 +8,7 @@ import { BookingListPage } from './pages/BookingListPage';
 import { BookingDetailsPage } from './pages/BookingDetailsPage';
 import { BookingFormPage } from './pages/BookingFormPage';
 import { BookingCalendarPage } from './pages/BookingCalendarPage';
+import { ManageBookingsPage } from './pages/ManageBookingsPage';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardRedirect } from './components/DashboardRedirect';
@@ -93,6 +94,7 @@ function App() {
                 <Route path="/admin/facilities" element={<FacilityList />} />
                 <Route path="/admin/facilities/new" element={<AddFacility />} />
                 <Route path="/admin/facilities/:facilityId/edit" element={<EditFacility />} />
+                <Route path="/admin/bookings" element={<ManageBookingsPage />} />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['STAFF', 'ADMIN']} />}>
