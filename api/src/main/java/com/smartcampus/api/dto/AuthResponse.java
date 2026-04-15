@@ -44,5 +44,11 @@ public class AuthResponse {
         private String name;
         private String pictureUrl;
         private Set<Role> roles;
+        private String studentRegistrationNumber;
+        private String faculty;
+        private String major;
+        private String phoneNumber;
+    private String employeeId;
+    private String department;
     }
 }

@@ -53,6 +53,9 @@ public class DataInitializer {
                         .pictureUrl("https://ui-avatars.com/api/?name=Super+Admin&background=dc2626&color=fff")
                         .roles(Set.of(Role.ADMIN))
                         .enabled(true)
+                        .employeeId("EMP-ADMIN-" + System.currentTimeMillis())
+                        .department("IT Services")
+                        .phoneNumber("+1234567890")
                         .build();
                 userRepository.save(admin);
                 log.info("Created ADMIN user");
@@ -69,6 +72,9 @@ public class DataInitializer {
                         .pictureUrl("https://ui-avatars.com/api/?name=Staff+Member&background=2563eb&color=fff")
                         .roles(Set.of(Role.STAFF))
                         .enabled(true)
+                        .employeeId("EMP-STAFF-" + System.currentTimeMillis())
+                        .department("Facility Management")
+                        .phoneNumber("+1234567890")
                         .build();
                 userRepository.save(staff);
                 log.info("Created STAFF user");
@@ -85,6 +91,10 @@ public class DataInitializer {
                         .pictureUrl("https://ui-avatars.com/api/?name=Test+Student&background=16a34a&color=fff")
                         .roles(Set.of(Role.STUDENT))
                         .enabled(true)
+                        .studentRegistrationNumber(java.util.UUID.randomUUID().toString())
+                        .faculty("Engineering")
+                        .major("Software Engineering")
+                        .phoneNumber("+1234567890")
                         .build();
                 userRepository.save(student);
                 log.info("Created STUDENT user");

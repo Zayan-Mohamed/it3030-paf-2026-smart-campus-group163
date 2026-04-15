@@ -23,4 +23,10 @@ public class UpdateUserDto {
     // Only Admin/Staff might be able to update these
     private Set<Role> roles;
     private Boolean enabled;
+    private String studentRegistrationNumber;
+    private String faculty;
+    private String major;
+    private String phoneNumber;
+    private String employeeId;
+    private String department;
 }

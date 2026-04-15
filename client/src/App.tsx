@@ -1,3 +1,4 @@
+import { LandingPage } from './pages/LandingPage';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -13,7 +14,9 @@ import { ManageBookingsPage } from './pages/ManageBookingsPage';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardRedirect } from './components/DashboardRedirect';
+
 import { Unauthorized } from './pages/Unauthorized';
+import { CompleteProfile } from './pages/CompleteProfile';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { StaffDashboard } from './pages/StaffDashboard';
@@ -43,7 +46,7 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<LandingPage />} />
             
             {/* Public Routes with Navbar and constrained width */}
             <Route path="/login" element={
@@ -54,6 +57,9 @@ function App() {
             } />
             <Route path="/auth/callback" element={
               <div className="min-h-screen bg-slate-50"><Navbar /><main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"><OAuthCallback /></main></div>
+            } />
+            <Route path="/complete-profile" element={
+              <div className="min-h-screen bg-slate-50"><Navbar /><main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"><CompleteProfile /></main></div>
             } />
             <Route path="/unauthorized" element={
               <div className="min-h-screen bg-slate-50"><Navbar /><main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"><Unauthorized /></main></div>

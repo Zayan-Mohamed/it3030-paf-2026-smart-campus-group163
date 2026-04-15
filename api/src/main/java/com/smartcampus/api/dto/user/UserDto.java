@@ -20,6 +20,12 @@ public class UserDto {
     private String pictureUrl;
     private Set<Role> roles;
     private Boolean enabled;
+    private String studentRegistrationNumber;
+    private String faculty;
+    private String major;
+    private String phoneNumber;
+    private String employeeId;
+    private String department;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastLogin;

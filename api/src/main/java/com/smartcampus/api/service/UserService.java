@@ -66,6 +66,27 @@ public class UserService {
             user.setName(updateDto.getName());
         }
         
+        if (updateDto.getStudentRegistrationNumber() != null) {
+            String val = updateDto.getStudentRegistrationNumber().trim();
+            user.setStudentRegistrationNumber(val.isEmpty() ? null : val);
+        }
+        if (updateDto.getFaculty() != null) {
+            user.setFaculty(updateDto.getFaculty());
+        }
+        if (updateDto.getMajor() != null) {
+            user.setMajor(updateDto.getMajor());
+        }
+        if (updateDto.getPhoneNumber() != null) {
+            user.setPhoneNumber(updateDto.getPhoneNumber());
+        }
+        if (updateDto.getEmployeeId() != null) {
+            String val = updateDto.getEmployeeId().trim();
+            user.setEmployeeId(val.isEmpty() ? null : val);
+        }
+        if (updateDto.getDepartment() != null) {
+            user.setDepartment(updateDto.getDepartment());
+        }
+
         if (updateDto.getPictureUrl() != null) {
             user.setPictureUrl(updateDto.getPictureUrl());
         }
@@ -89,7 +110,7 @@ public class UserService {
         return mapToDto(updatedUser);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @userService.isCurrentUser(#id)")
     @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
@@ -103,7 +124,12 @@ public class UserService {
         if (auth == null || !auth.isAuthenticated()) {
             return false;
         }
-        String currentUserEmail = auth.getName();
+        String currentUserEmail;
+        if (auth.getPrincipal() instanceof User) {
+            currentUserEmail = ((User) auth.getPrincipal()).getEmail();
+        } else {
+            currentUserEmail = auth.getName();
+        }
         return userRepository.findById(id)
                 .map(user -> user.getEmail().equals(currentUserEmail))
                 .orElse(false);
@@ -117,6 +143,12 @@ public class UserService {
                 .pictureUrl(user.getPictureUrl())
                 .roles(user.getRoles())
                 .enabled(user.getEnabled())
+                .studentRegistrationNumber(user.getStudentRegistrationNumber())
+                .faculty(user.getFaculty())
+                .major(user.getMajor())
+                .phoneNumber(user.getPhoneNumber())
+                .employeeId(user.getEmployeeId())
+                .department(user.getDepartment())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .lastLogin(user.getLastLogin())

@@ -61,7 +61,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/", "/error", "/health").permitAll()
-                        .requestMatchers("/oauth2/**", "/login/**", "/api/v1/auth/signup", "/api/v1/auth/login")
+                        .requestMatchers("/oauth2/**", "/login/**", "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/verify-otp", "/api/v1/auth/resend-otp")
                         .permitAll()
                         
                         // WebSocket endpoint - requires authentication

@@ -4,6 +4,12 @@ export interface User {
   name: string;
   pictureUrl: string;
   roles: string[];
+  studentRegistrationNumber?: string;
+  faculty?: string;
+  major?: string;
+  phoneNumber?: string;
+  employeeId?: string;
+  department?: string;
 }
 
 export type FacilityType =

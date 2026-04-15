@@ -462,56 +462,6 @@ export const BookingFormPage = () => {
 
   return (
     <div className="dashboard-layout">
-      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
-          {sidebarOpen && <h2 className="sidebar-title">Student Portal</h2>}
-        </div>
-
-        <nav className="sidebar-nav">
-          <Link to="/dashboard/student" className="nav-item">
-            <span className="nav-icon"><Home size={20} /></span>
-            {sidebarOpen && <span>Dashboard</span>}
-          </Link>
-          <Link to="/bookings" className="nav-item active">
-            <span className="nav-icon"><Calendar size={20} /></span>
-            {sidebarOpen && <span>My Bookings</span>}
-          </Link>
-          <Link to="/incidents" className="nav-item">
-            <span className="nav-icon"><AlertTriangle size={20} /></span>
-            {sidebarOpen && <span>My Incidents</span>}
-          </Link>
-          <Link to="/facilities" className="nav-item">
-            <span className="nav-icon"><Building2 size={20} /></span>
-            {sidebarOpen && <span>Browse Facilities</span>}
-          </Link>
-          <Link to="/events" className="nav-item">
-            <span className="nav-icon"><PartyPopper size={20} /></span>
-            {sidebarOpen && <span>Campus Events</span>}
-          </Link>
-          <Link to="/map" className="nav-item">
-            <span className="nav-icon"><Map size={20} /></span>
-            {sidebarOpen && <span>Campus Map</span>}
-          </Link>
-        </nav>
-
-        {sidebarOpen && (
-          <div className="sidebar-footer">
-            <div className="user-info">
-              {user?.pictureUrl && <img src={user.pictureUrl} alt="Profile" className="user-avatar" />}
-              <div className="user-details">
-                <p className="user-name">{user?.name}</p>
-                <p className="user-role">Student</p>
-              </div>
-            </div>
-            <button onClick={handleLogout} className="logout-btn">
-              <LogOut size={20} /> Logout
-            </button>
-          </div>
-        )}
-      </aside>
 
       <main className="dashboard-main">{formContent}</main>
     </div>

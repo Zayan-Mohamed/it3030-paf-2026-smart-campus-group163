@@ -25,7 +25,7 @@ export const UserService = {
     return response.json();
   },
 
-  async updateUser(id: number, data: { name?: string; pictureUrl?: string }) {
+  async updateUser(id: number, data: { name?: string; pictureUrl?: string; studentRegistrationNumber?: string; faculty?: string; major?: string; phoneNumber?: string; employeeId?: string; department?: string }) {
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
