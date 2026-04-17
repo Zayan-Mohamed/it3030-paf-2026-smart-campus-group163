@@ -4,6 +4,12 @@ export interface User {
   name: string;
   pictureUrl: string;
   roles: string[];
+  studentRegistrationNumber?: string;
+  faculty?: string;
+  major?: string;
+  phoneNumber?: string;
+  employeeId?: string;
+  department?: string;
 }
 
 export type FacilityType =
@@ -42,6 +48,7 @@ export interface Booking {
   facilityCapacity: number;
   userId: number;
   userName: string;
+  userEmail: string;
   startTime: string;
   endTime: string;
   purpose: string;
@@ -50,6 +57,9 @@ export interface Booking {
   staffComments?: string | null;
   reviewedByName?: string | null;
   reviewedAt?: string | null;
+  adminCancelReason?: string | null;
+  cancelledByName?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
   canEdit: boolean;
@@ -122,4 +132,25 @@ export interface IncidentComment {
   updatedAt: string;
   canEdit: boolean;
   canDelete: boolean;
+}
+
+export interface ApiError {
+  status: number;
+  error: string;
+  message: string;
+  path: string;
+  timestamp: string;
+  details?: Record<string, string>;
+}
+
+export type NotificationType = 'BOOKING_UPDATE' | 'TICKET_UPDATE' | 'NEW_COMMENT';
+
+export interface Notification {
+  id: number;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: string;
+  referenceId?: string;
+  referenceType?: string;
 }

@@ -8,8 +8,12 @@ import java.util.List;
 
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findByReporterOrderByCreatedAtDesc(User reporter);
+ ticket-flow
 
     List<Incident> findByAssignedToOrderByCreatedAtDesc(User assignedTo);
 
     List<Incident> findAllByOrderByCreatedAtDesc();
+
+    long countByStatus(Incident.IncidentStatus status);
+ main
 }

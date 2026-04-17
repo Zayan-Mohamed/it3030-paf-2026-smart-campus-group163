@@ -1,6 +1,11 @@
 package com.smartcampus.api.controller;
 
 import com.smartcampus.api.dto.AdminDashboardResponse;
+import com.smartcampus.api.model.Incident.IncidentStatus;
+import com.smartcampus.api.repository.BookingRepository;
+import com.smartcampus.api.repository.FacilityRepository;
+import com.smartcampus.api.repository.IncidentRepository;
+import com.smartcampus.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +32,11 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:5174"})
 public class AdminDashboardController {
     
+    private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final IncidentRepository incidentRepository;
+    private final FacilityRepository facilityRepository;
+    
     /**
      * Get admin dashboard welcome data.
      * 
@@ -42,14 +52,18 @@ public class AdminDashboardController {
     ) {
         log.info("Admin dashboard welcome request from user: {}", userDetails.getUsername());
         
-        // Placeholder response until dashboard services are wired in.
+        long totalUsers = userRepository.count();
+        long activeBookings = bookingRepository.count(); // Represents total or active bookings depending on logic
+        long openIncidents = incidentRepository.countByStatus(IncidentStatus.OPEN);
+        long totalFacilities = facilityRepository.count();
+        
         AdminDashboardResponse response = AdminDashboardResponse.builder()
                 .message("Welcome Admin!")
                 .adminName(userDetails.getUsername())
-                .totalUsers(0)
-                .activeBookings(0)
-                .openIncidents(0)
-                .totalFacilities(0)
+                .totalUsers((int) totalUsers)
+                .activeBookings((int) activeBookings)
+                .openIncidents((int) openIncidents)
+                .totalFacilities((int) totalFacilities)
                 .build();
         
         return ResponseEntity.ok(response);

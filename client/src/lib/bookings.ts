@@ -45,7 +45,7 @@ function buildQuery(filters: Record<string, string | number | undefined>) {
 }
 
 export async function getFacilities(token: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/facilities`, {
+  const response = await fetch(`${API_BASE_URL}/api/facilities`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -121,6 +121,34 @@ export async function cancelBooking(token: string, bookingId: number) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+
+  return parseJsonOrThrow<Booking>(response);
+}
+
+export async function reviewBooking(
+  token: string,
+  bookingId: number,
+  status: 'APPROVED' | 'REJECTED',
+  comment?: string
+) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bookings/${bookingId}/review`, {
+    method: 'POST',
+    headers: buildHeaders(token),
+    body: JSON.stringify({
+      status,
+      staffComments: comment || null,
+    }),
+  });
+
+  return parseJsonOrThrow<Booking>(response);
+}
+
+export async function adminCancelBooking(token: string, bookingId: number, reason: string) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/bookings/${bookingId}/admin-cancel`, {
+    method: 'POST',
+    headers: buildHeaders(token),
+    body: JSON.stringify({ reason }),
   });
 
   return parseJsonOrThrow<Booking>(response);

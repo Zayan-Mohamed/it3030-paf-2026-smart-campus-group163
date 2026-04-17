@@ -1,6 +1,7 @@
 package com.smartcampus.api.service;
 
 import com.smartcampus.api.dto.booking.BookingConflictResponse;
+import com.smartcampus.api.dto.booking.AdminCancelBookingRequest;
 import com.smartcampus.api.dto.booking.BookingResponse;
 import com.smartcampus.api.dto.booking.CreateBookingRequest;
 import com.smartcampus.api.dto.booking.ReviewBookingRequest;
@@ -10,6 +11,7 @@ import com.smartcampus.api.model.Facility;
 import com.smartcampus.api.model.Role;
 import com.smartcampus.api.model.User;
 import com.smartcampus.api.repository.BookingRepository;
+import com.smartcampus.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class BookingService {
             Booking.BookingStatus.APPROVED);
 
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
     private final FacilityService facilityService;
 
     @Transactional(readOnly = true)
@@ -131,6 +134,34 @@ public class BookingService {
 
         booking.setStatus(Booking.BookingStatus.CANCELLED);
         return mapToResponse(bookingRepository.save(booking), currentUser);
+    }
+
+    @Transactional
+    public BookingResponse adminCancelBooking(User admin, Long bookingId, AdminCancelBookingRequest request) {
+        Booking booking = getBookingEntity(bookingId);
+
+        if (!admin.hasRole(Role.ADMIN)) {
+            throw new IllegalArgumentException("Only admins can cancel approved bookings");
+        }
+        if (booking.getStatus() != Booking.BookingStatus.APPROVED) {
+            throw new IllegalArgumentException("Only approved bookings can be cancelled by admin");
+        }
+        if (booking.getReviewedAt() == null || booking.getReviewedAt().plusHours(2).isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Approved bookings can only be cancelled within 2 hours of approval");
+        }
+
+        String reason = normalizeOptional(request.getReason());
+        if (reason == null) {
+            throw new IllegalArgumentException("Cancellation reason is required");
+        }
+
+        booking.setStatus(Booking.BookingStatus.CANCELLED);
+        booking.setAdminCancelReason(reason);
+        booking.setStaffComments(reason);
+        booking.setCancelledBy(admin);
+        booking.setCancelledAt(LocalDateTime.now());
+
+        return mapToResponse(bookingRepository.save(booking), admin);
     }
 
     @Transactional
@@ -306,6 +337,7 @@ public class BookingService {
                 .facilityCapacity(booking.getFacility().getCapacity())
                 .userId(booking.getUser().getId())
                 .userName(privileged ? booking.getUser().getName() : currentUser.getName())
+                .userEmail(resolveBookedUserEmail(booking, currentUser, privileged))
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
                 .purpose(booking.getPurpose())
@@ -314,11 +346,33 @@ public class BookingService {
                 .staffComments(booking.getStaffComments())
                 .reviewedByName(booking.getReviewedBy() != null ? booking.getReviewedBy().getName() : null)
                 .reviewedAt(booking.getReviewedAt())
+                .adminCancelReason(booking.getAdminCancelReason())
+                .cancelledByName(booking.getCancelledBy() != null ? booking.getCancelledBy().getName() : null)
+                .cancelledAt(booking.getCancelledAt())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
                 .canEdit(canEdit)
                 .canDelete(canDelete)
                 .canCancel(canCancel)
                 .build();
+    }
+
+    private String resolveBookedUserEmail(Booking booking, User currentUser, boolean privileged) {
+        if (!privileged) {
+            return currentUser.getEmail();
+        }
+
+        String mappedEmail = booking.getUser() != null ? normalizeOptional(booking.getUser().getEmail()) : null;
+        if (mappedEmail != null) {
+            return mappedEmail;
+        }
+
+        if (booking.getUser() == null || booking.getUser().getId() == null) {
+            return null;
+        }
+
+        return userRepository.findById(booking.getUser().getId())
+                .map(User::getEmail)
+                .orElse(null);
     }
 }

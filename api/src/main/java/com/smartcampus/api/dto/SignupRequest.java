@@ -17,4 +17,16 @@ public class SignupRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    @NotBlank(message = "Student Registration Number is required")
+    private String studentRegistrationNumber;
+
+    @NotBlank(message = "Faculty is required")
+    private String faculty;
+
+    @NotBlank(message = "Major is required")
+    private String major;
+
+    @NotBlank(message = "Phone number is required")
+    private String phoneNumber;
 }

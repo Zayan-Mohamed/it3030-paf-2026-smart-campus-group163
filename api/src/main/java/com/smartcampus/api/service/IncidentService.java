@@ -6,9 +6,13 @@ import com.smartcampus.api.dto.incident.CreateIncidentCommentRequest;
 import com.smartcampus.api.dto.incident.IncidentAssigneeResponse;
 import com.smartcampus.api.dto.incident.IncidentCommentResponse;
 import com.smartcampus.api.dto.incident.IncidentResponse;
+ ticket-flow
 import com.smartcampus.api.dto.incident.RejectIncidentRequest;
 import com.smartcampus.api.dto.incident.UpdateIncidentCommentRequest;
 import com.smartcampus.api.dto.incident.UpdateIncidentStatusRequest;
+
+import com.smartcampus.api.event.TicketUpdatedEvent;
+ main
 import com.smartcampus.api.model.Incident;
 import com.smartcampus.api.model.IncidentAttachment;
 import com.smartcampus.api.model.IncidentComment;
@@ -18,6 +22,8 @@ import com.smartcampus.api.repository.IncidentCommentRepository;
 import com.smartcampus.api.repository.IncidentRepository;
 import com.smartcampus.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -31,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IncidentService {
 
     private static final int MAX_ATTACHMENTS = 3;
@@ -44,7 +51,18 @@ public class IncidentService {
     private final IncidentCommentRepository incidentCommentRepository;
     private final UserRepository userRepository;
     private final SupabaseStorageService supabaseStorageService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
 
+    /**
+     * Creates a new incident and sends notifications to the reporter (confirmation)
+     * and all staff/admin users (alert).
+     * 
+     * @param reporter User who is reporting the incident
+     * @param request Incident details from the form
+     * @param attachments Optional image attachments (up to 3)
+     * @return Created incident response
+     */
     public IncidentResponse createIncident(User reporter, CreateIncidentRequest request,
             List<MultipartFile> attachments) {
         List<MultipartFile> safeAttachments = attachments == null ? Collections.emptyList()
@@ -70,6 +88,45 @@ public class IncidentService {
                 .build();
 
         Incident saved = incidentRepository.save(incident);
+        log.info("Incident created with ID: {}", saved.getId());
+
+        // Send confirmation notification to the reporter
+        String reporterMessage = String.format(
+                "Your incident #%d has been submitted successfully. Location: %s",
+                saved.getId(),
+                saved.getResourceLocation()
+        );
+
+        eventPublisher.publishEvent(new TicketUpdatedEvent(
+                this,
+                saved,
+                reporter,
+                "created",
+                reporterMessage
+        ));
+
+        // Send alert notification to all staff and admins
+        List<User> staffAndAdmins = userRepository.findAllStaffAndAdmins();
+        log.info("Notifying {} staff/admin users about new incident", staffAndAdmins.size());
+        
+        String staffMessage = String.format(
+                "New %s incident #%d reported by %s at %s",
+                saved.getPriority(),
+                saved.getId(),
+                reporter.getName(),
+                saved.getResourceLocation()
+        );
+
+        for (User staff : staffAndAdmins) {
+            eventPublisher.publishEvent(new TicketUpdatedEvent(
+                    this,
+                    saved,
+                    staff,
+                    "new_incident",
+                    staffMessage
+            ));
+        }
+
         return mapToResponse(saved);
     }
 
@@ -80,6 +137,7 @@ public class IncidentService {
                 .toList();
     }
 
+ticket-flow
     public List<IncidentResponse> getIncidentQueue(User currentUser) {
         List<Incident> incidents = currentUser.hasRole(Role.ADMIN)
                 ? incidentRepository.findAllByOrderByCreatedAtDesc()
@@ -226,6 +284,90 @@ public class IncidentService {
         }
 
         incidentCommentRepository.delete(comment);
+
+    /**
+     * Updates the status of an incident and publishes a notification event.
+     * Example method to demonstrate event publishing for incident status changes.
+     * 
+     * @param incidentId ID of the incident to update
+     * @param newStatus New status to set
+     * @param staffUser Staff member performing the update
+     * @return Updated incident response
+     */
+    public IncidentResponse updateIncidentStatus(Long incidentId, Incident.IncidentStatus newStatus, User staffUser) {
+        Incident incident = incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new IllegalArgumentException("Incident not found"));
+
+        Incident.IncidentStatus oldStatus = incident.getStatus();
+        incident.setStatus(newStatus);
+        
+        if (newStatus == Incident.IncidentStatus.RESOLVED) {
+            incident.setResolvedAt(java.time.LocalDateTime.now());
+        }
+        
+        Incident updated = incidentRepository.save(incident);
+
+        // Publish event to trigger notification
+        if (oldStatus != newStatus) {
+            String message = String.format("Your incident #%d status changed from %s to %s", 
+                    incident.getId(), oldStatus, newStatus);
+            
+            eventPublisher.publishEvent(new TicketUpdatedEvent(
+                    this,
+                    updated,
+                    incident.getReporter(),
+                    "status_changed",
+                    message
+            ));
+        }
+
+        return mapToResponse(updated);
+    }
+
+    /**
+     * Assigns an incident to a staff member and publishes a notification event.
+     * Example method to demonstrate event publishing for incident assignments.
+     * 
+     * @param incidentId ID of the incident to assign
+     * @param staffMember Staff member to assign
+     * @param assignedBy User performing the assignment
+     * @return Updated incident response
+     */
+    public IncidentResponse assignIncident(Long incidentId, User staffMember, User assignedBy) {
+        Incident incident = incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new IllegalArgumentException("Incident not found"));
+
+        incident.setAssignedTo(staffMember);
+        incident.setStatus(Incident.IncidentStatus.IN_PROGRESS);
+        
+        Incident updated = incidentRepository.save(incident);
+
+        // Publish event to trigger notification to the reporter
+        String reporterMessage = String.format("Your incident #%d has been assigned to %s", 
+                incident.getId(), staffMember.getName());
+        
+        eventPublisher.publishEvent(new TicketUpdatedEvent(
+                this,
+                updated,
+                incident.getReporter(),
+                "assigned",
+                reporterMessage
+        ));
+
+        // Publish event to trigger notification to the assigned staff
+        String staffMessage = String.format("You have been assigned to incident #%d: %s", 
+                incident.getId(), incident.getDescription().substring(0, Math.min(50, incident.getDescription().length())));
+        
+        eventPublisher.publishEvent(new TicketUpdatedEvent(
+                this,
+                updated,
+                staffMember,
+                "assigned",
+                staffMessage
+        ));
+
+        return mapToResponse(updated);
+ main
     }
 
     private void validateAttachments(List<MultipartFile> attachments) {

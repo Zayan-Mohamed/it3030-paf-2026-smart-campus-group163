@@ -1,36 +1,18 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import {
   Users,
   AlertTriangle,
   Rocket,
   Calendar,
-  Home,
-  Building2,
   BarChart3,
   Settings,
-  FileText,
   User,
   CheckCircle,
-  LogOut,
   Shield,
   Clipboard,
-  ChevronLeft,
-  ChevronRight
 } from 'lucide-react';
 import '../styles/Dashboard.css';
 
 export const AdminDashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   // TODO: Fetch real stats from API
   const stats = [
     { title: 'Total Users', value: '0', icon: Users, color: '#0891b2', change: 'Loading...' },
@@ -49,62 +31,6 @@ export const AdminDashboard = () => {
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
-      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
-          {sidebarOpen && <h2 className="sidebar-title">Admin Panel</h2>}
-        </div>
-
-        <nav className="sidebar-nav">
-          <Link to="/dashboard/admin" className="nav-item active">
-            <span className="nav-icon"><Home size={20} /></span>
-            {sidebarOpen && <span>Dashboard</span>}
-          </Link>
-          <Link to="/admin/users" className="nav-item">
-            <span className="nav-icon"><Users size={20} /></span>
-            {sidebarOpen && <span>User Management</span>}
-          </Link>
-          <Link to="/admin/facilities" className="nav-item">
-            <span className="nav-icon"><Building2 size={20} /></span>
-            {sidebarOpen && <span>Facilities</span>}
-          </Link>
-          <Link to="/admin/incidents" className="nav-item">
-            <span className="nav-icon"><AlertTriangle size={20} /></span>
-            {sidebarOpen && <span>All Incidents</span>}
-          </Link>
-          <Link to="/admin/analytics" className="nav-item">
-            <span className="nav-icon"><BarChart3 size={20} /></span>
-            {sidebarOpen && <span>Analytics</span>}
-          </Link>
-          <Link to="/admin/settings" className="nav-item">
-            <span className="nav-icon"><Settings size={20} /></span>
-            {sidebarOpen && <span>System Settings</span>}
-          </Link>
-          <Link to="/admin/audit" className="nav-item">
-            <span className="nav-icon"><FileText size={20} /></span>
-            {sidebarOpen && <span>Audit Logs</span>}
-          </Link>
-        </nav>
-
-        {sidebarOpen && (
-          <div className="sidebar-footer">
-            <div className="user-info">
-              {user?.pictureUrl && (
-                <img src={user.pictureUrl} alt="Profile" className="user-avatar" />
-              )}
-              <div className="user-details">
-                <p className="user-name">{user?.name}</p>
-                <p className="user-role">Administrator</p>
-              </div>
-            </div>
-            <button onClick={handleLogout} className="logout-btn">
-              <LogOut size={20} /> Logout
-            </button>
-          </div>
-        )}
-      </aside>
 
       {/* Main Content */}
       <main className="dashboard-main">

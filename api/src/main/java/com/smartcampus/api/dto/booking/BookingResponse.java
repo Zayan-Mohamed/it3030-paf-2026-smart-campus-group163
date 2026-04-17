@@ -23,6 +23,7 @@ public class BookingResponse {
     private Integer facilityCapacity;
     private Long userId;
     private String userName;
+    private String userEmail;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String purpose;
@@ -31,6 +32,9 @@ public class BookingResponse {
     private String staffComments;
     private String reviewedByName;
     private LocalDateTime reviewedAt;
+    private String adminCancelReason;
+    private String cancelledByName;
+    private LocalDateTime cancelledAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean canEdit;

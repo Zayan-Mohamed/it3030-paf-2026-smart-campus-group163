@@ -1,7 +1,6 @@
 package com.smartcampus.api.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,7 +52,6 @@ public class Booking {
      */
     @Column(name = "start_time", nullable = false)
     @NotNull(message = "Start time is required")
-    @Future(message = "Start time must be in the future")
     private LocalDateTime startTime;
     
     /**
@@ -61,7 +59,6 @@ public class Booking {
      */
     @Column(name = "end_time", nullable = false)
     @NotNull(message = "End time is required")
-    @Future(message = "End time must be in the future")
     private LocalDateTime endTime;
     
     /**
@@ -102,6 +99,25 @@ public class Booking {
      */
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
+
+    /**
+     * Reason provided when an approved booking is cancelled by an admin
+     */
+    @Column(name = "admin_cancel_reason", columnDefinition = "TEXT")
+    private String adminCancelReason;
+
+    /**
+     * Admin user who cancelled the booking
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_by")
+    private User cancelledBy;
+
+    /**
+     * Timestamp when the booking was cancelled by admin
+     */
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

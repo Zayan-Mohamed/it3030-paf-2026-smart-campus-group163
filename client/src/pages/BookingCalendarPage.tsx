@@ -1,17 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
-  AlertTriangle,
-  Building2,
-  Calendar,
   ChevronLeft,
   ChevronRight,
-  Home,
-  LogOut,
-  Map,
-  PartyPopper,
   Plus,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,20 +34,13 @@ function toIso(date: Date) {
 }
 
 export const BookingCalendarPage = () => {
-  const { token, user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { token } = useAuth();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedFacility, setSelectedFacility] = useState<number | ''>('');
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const loadCalendar = async () => {
     if (!token) {
@@ -96,57 +81,6 @@ export const BookingCalendarPage = () => {
 
   return (
     <div className="dashboard-layout">
-      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
-          {sidebarOpen && <h2 className="sidebar-title">Student Portal</h2>}
-        </div>
-
-        <nav className="sidebar-nav">
-          <Link to="/dashboard/student" className="nav-item">
-            <span className="nav-icon"><Home size={20} /></span>
-            {sidebarOpen && <span>Dashboard</span>}
-          </Link>
-          <Link to="/bookings" className="nav-item active">
-            <span className="nav-icon"><Calendar size={20} /></span>
-            {sidebarOpen && <span>My Bookings</span>}
-          </Link>
-          <Link to="/incidents" className="nav-item">
-            <span className="nav-icon"><AlertTriangle size={20} /></span>
-            {sidebarOpen && <span>My Incidents</span>}
-          </Link>
-          <Link to="/facilities" className="nav-item">
-            <span className="nav-icon"><Building2 size={20} /></span>
-            {sidebarOpen && <span>Browse Facilities</span>}
-          </Link>
-          <Link to="/events" className="nav-item">
-            <span className="nav-icon"><PartyPopper size={20} /></span>
-            {sidebarOpen && <span>Campus Events</span>}
-          </Link>
-          <Link to="/map" className="nav-item">
-            <span className="nav-icon"><Map size={20} /></span>
-            {sidebarOpen && <span>Campus Map</span>}
-          </Link>
-        
-        </nav>
-
-        {sidebarOpen && (
-          <div className="sidebar-footer">
-            <div className="user-info">
-              {user?.pictureUrl && <img src={user.pictureUrl} alt="Profile" className="user-avatar" />}
-              <div className="user-details">
-                <p className="user-name">{user?.name}</p>
-                <p className="user-role">Student</p>
-              </div>
-            </div>
-            <button onClick={handleLogout} className="logout-btn">
-              <LogOut size={20} /> Logout
-            </button>
-          </div>
-        )}
-      </aside>
 
       <main className="dashboard-main">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">

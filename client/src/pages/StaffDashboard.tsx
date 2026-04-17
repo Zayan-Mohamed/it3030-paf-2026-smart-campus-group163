@@ -1,32 +1,13 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import {
   AlertTriangle,
   Clipboard,
   CheckCircle,
   Clock,
-  Home,
-  Wrench,
-  Calendar,
-  BarChart3,
-  Building2,
-  LogOut,
   Lightbulb,
-  ChevronLeft,
-  ChevronRight
 } from 'lucide-react';
 import '../styles/Dashboard.css';
 
 export const StaffDashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   // TODO: Fetch real stats from API
   const stats = [
@@ -39,58 +20,6 @@ export const StaffDashboard = () => {
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
-      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''}`}>
-        <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
-          {sidebarOpen && <h2 className="sidebar-title">Staff Portal</h2>}
-        </div>
-
-        <nav className="sidebar-nav">
-          <Link to="/dashboard/staff" className="nav-item active">
-            <span className="nav-icon"><Home size={20} /></span>
-            {sidebarOpen && <span>Dashboard</span>}
-          </Link>
-          <Link to="/incidents/queue" className="nav-item">
-            <span className="nav-icon"><AlertTriangle size={20} /></span>
-            {sidebarOpen && <span>Incident Queue</span>}
-          </Link>
-          <Link to="/maintenance" className="nav-item">
-            <span className="nav-icon"><Wrench size={20} /></span>
-            {sidebarOpen && <span>Maintenance</span>}
-          </Link>
-          <Link to="/schedule" className="nav-item">
-            <span className="nav-icon"><Calendar size={20} /></span>
-            {sidebarOpen && <span>My Schedule</span>}
-          </Link>
-          <Link to="/reports" className="nav-item">
-            <span className="nav-icon"><BarChart3 size={20} /></span>
-            {sidebarOpen && <span>Reports</span>}
-          </Link>
-          <Link to="/facilities/manage" className="nav-item">
-            <span className="nav-icon"><Building2 size={20} /></span>
-            {sidebarOpen && <span>Facilities</span>}
-          </Link>
-        </nav>
-
-        {sidebarOpen && (
-          <div className="sidebar-footer">
-            <div className="user-info">
-              {user?.pictureUrl && (
-                <img src={user.pictureUrl} alt="Profile" className="user-avatar" />
-              )}
-              <div className="user-details">
-                <p className="user-name">{user?.name}</p>
-                <p className="user-role">Staff Member</p>
-              </div>
-            </div>
-            <button onClick={handleLogout} className="logout-btn">
-              <LogOut size={20} /> Logout
-            </button>
-          </div>
-        )}
-      </aside>
 
       {/* Main Content */}
       <main className="dashboard-main">

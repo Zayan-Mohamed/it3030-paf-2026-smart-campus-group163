@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import com.smartcampus.api.dto.LoginRequest;
 import com.smartcampus.api.dto.SignupRequest;
 import com.smartcampus.api.dto.TokenResponse;
+import com.smartcampus.api.dto.VerifyOtpRequest;
+import com.smartcampus.api.dto.ResendOtpRequest;
 import com.smartcampus.api.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +40,17 @@ public class AuthController {
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<TokenResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        return ResponseEntity.ok(authService.verifyOtp(request));
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<Void> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+        authService.resendOtp(request);
+        return ResponseEntity.ok().build();
+    }
     
     /**
      * Get current authenticated user information.
@@ -57,6 +70,12 @@ public class AuthController {
                 .name(user.getName())
                 .pictureUrl(user.getPictureUrl())
                 .roles(user.getRoles())
+                .studentRegistrationNumber(user.getStudentRegistrationNumber())
+                .faculty(user.getFaculty())
+                .major(user.getMajor())
+                .phoneNumber(user.getPhoneNumber())
+                .employeeId(user.getEmployeeId())
+                .department(user.getDepartment())
                 .build();
         
         return ResponseEntity.ok(userInfo);

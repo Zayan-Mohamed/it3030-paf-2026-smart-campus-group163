@@ -61,8 +61,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/", "/error", "/health").permitAll()
-                        .requestMatchers("/api/facilities/**", "/login/**", "/oauth2/**").permitAll()
-                        .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/**", "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/verify-otp", "/api/v1/auth/resend-otp")
+                        .permitAll()
+                        
+                        // WebSocket endpoint - requires authentication
+                        .requestMatchers("/ws-notifications/**").permitAll() // WebSocket handshake happens before authentication
 
                         // API endpoints - require authentication
                         .requestMatchers("/api/**").authenticated()

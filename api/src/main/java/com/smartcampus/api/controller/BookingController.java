@@ -1,6 +1,7 @@
 package com.smartcampus.api.controller;
 
 import com.smartcampus.api.dto.booking.BookingConflictResponse;
+import com.smartcampus.api.dto.booking.AdminCancelBookingRequest;
 import com.smartcampus.api.dto.booking.BookingResponse;
 import com.smartcampus.api.dto.booking.CreateBookingRequest;
 import com.smartcampus.api.dto.booking.ReviewBookingRequest;
@@ -92,6 +93,18 @@ public class BookingController {
         }
         bookingService.deleteBooking(user, bookingId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{bookingId}/admin-cancel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingResponse> adminCancelBooking(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long bookingId,
+            @Valid @RequestBody AdminCancelBookingRequest request) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(bookingService.adminCancelBooking(user, bookingId, request));
     }
 
     @PostMapping("/{bookingId}/cancel")

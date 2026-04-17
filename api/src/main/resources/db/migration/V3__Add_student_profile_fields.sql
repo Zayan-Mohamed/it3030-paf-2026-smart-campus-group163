@@ -1,0 +1,4 @@
+ALTER TABLE users ADD COLUMN student_registration_number VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN faculty VARCHAR(255);
+ALTER TABLE users ADD COLUMN major VARCHAR(255);
+ALTER TABLE users ADD COLUMN phone_number VARCHAR(255);

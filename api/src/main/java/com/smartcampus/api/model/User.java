@@ -65,6 +65,42 @@ public class User {
      */
     @Column(name = "picture_url")
     private String pictureUrl;
+
+    /**
+     * Student registration number
+     */
+    @Column(name = "student_registration_number", unique = true)
+    private String studentRegistrationNumber;
+
+    /**
+     * Student faculty
+     */
+    @Column(name = "faculty")
+    private String faculty;
+
+    /**
+     * Student major
+     */
+    @Column(name = "major")
+    private String major;
+
+    /**
+     * User phone number
+     */
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    /**
+     * Staff/Admin Employee ID
+     */
+    @Column(name = "employee_id", unique = true)
+    private String employeeId;
+
+    /**
+     * Staff/Admin Department
+     */
+    @Column(name = "department")
+    private String department;
     
     /**
      * User's roles in the system (STUDENT, STAFF, ADMIN)
@@ -82,6 +118,18 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private Boolean enabled = true;
+
+    /**
+     * User's OTP code for email verification
+     */
+    @Column(name = "otp_code", length = 6)
+    private String otpCode;
+
+    /**
+     * OTP code expiration time
+     */
+    @Column(name = "otp_expiry")
+    private LocalDateTime otpExpiry;
     
     /**
      * Timestamp when the user was created

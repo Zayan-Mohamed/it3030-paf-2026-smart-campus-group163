@@ -50,6 +50,25 @@ spring:
       max-file-size: 5MB
       max-request-size: 16MB
 
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        debug: true
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+logging:
+  level:
+    org.springframework.mail: DEBUG
+    com.smartcampus.api.service.EmailService: DEBUG
+
 app:
   jwt:
     secret: ${JWT_SECRET_KEY}
