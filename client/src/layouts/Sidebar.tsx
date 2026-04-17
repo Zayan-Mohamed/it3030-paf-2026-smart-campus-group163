@@ -131,7 +131,7 @@ export const Sidebar = () => {
               <span className="nav-icon"><BarChart3 size={20} /></span>
               {sidebarOpen && <span>Reports</span>}
             </Link>
-            <Link to="/facilities/manage" className={cn("nav-item", checkActive('/facilities/manage') && "active")}>
+            <Link to="/dashboard/staff/facilities" className={cn("nav-item", checkActive('/dashboard/staff/facilities') && "active")}>
               <span className="nav-icon"><Building2 size={20} /></span>
               {sidebarOpen && <span>Facilities</span>}
             </Link>
@@ -156,7 +156,7 @@ export const Sidebar = () => {
               <span className="nav-icon"><AlertTriangle size={20} /></span>
               {sidebarOpen && <span>My Incidents</span>}
             </Link>
-            <Link to="/facilities" className={cn("nav-item", checkActive('/facilities') && "active")}>
+            <Link to="/dashboard/student/facilities" className={cn("nav-item", checkActive('/dashboard/student/facilities') && "active")}>
               <span className="nav-icon"><Building2 size={20} /></span>
               {sidebarOpen && <span>Browse Facilities</span>}
             </Link>

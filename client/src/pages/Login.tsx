@@ -64,7 +64,7 @@ export const Login = () => {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
-      setError(message.includes('Failed to fetch') ? `Unable to reach backend at ${API_BASE_URL}.` : message);
+      setError(message || `Unable to reach backend at ${API_BASE_URL}.`);
     }
   };
 

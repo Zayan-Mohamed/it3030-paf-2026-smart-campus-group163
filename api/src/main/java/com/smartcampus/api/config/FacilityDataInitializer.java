@@ -1,6 +1,8 @@
 package com.smartcampus.api.config;
 
+import com.smartcampus.api.model.Amenity;
 import com.smartcampus.api.model.Facility;
+import com.smartcampus.api.repository.AmenityRepository;
 import com.smartcampus.api.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +12,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Configuration
 @RequiredArgsConstructor
@@ -19,6 +24,7 @@ import java.util.List;
 public class FacilityDataInitializer {
 
     private final FacilityRepository facilityRepository;
+    private final AmenityRepository amenityRepository;
 
     @Bean
     public CommandLineRunner initFacilities() {
@@ -28,6 +34,22 @@ public class FacilityDataInitializer {
                 return;
             }
 
+            Map<String, Amenity> amenities = seedAmenities(
+                    "Projector",
+                    "Air Conditioning",
+                    "40 PCs",
+                    "Whiteboard",
+                    "Monitor",
+                    "Power Outlets",
+                    "Stage",
+                    "PA System",
+                    "Lighting",
+                    "Workbenches",
+                    "Soldering Stations",
+                    "Storage",
+                    "Video Conferencing"
+            );
+
             List<Facility> facilities = List.of(
                     Facility.builder()
                             .name("Innovation Lab 01")
@@ -36,7 +58,7 @@ public class FacilityDataInitializer {
                             .location("Engineering Building - Floor 2")
                             .capacity(40)
                             .status(Facility.FacilityStatus.AVAILABLE)
-                            .amenities("Projector,Air Conditioning,40 PCs,Whiteboard")
+                            .amenities(linkedAmenities(amenities, "Projector", "Air Conditioning", "40 PCs", "Whiteboard"))
                             .availableFrom(LocalTime.of(8, 0))
                             .availableTo(LocalTime.of(17, 0))
                             .build(),
@@ -47,7 +69,7 @@ public class FacilityDataInitializer {
                             .location("Library - Floor 3")
                             .capacity(8)
                             .status(Facility.FacilityStatus.AVAILABLE)
-                            .amenities("Whiteboard,Monitor,Power Outlets")
+                            .amenities(linkedAmenities(amenities, "Whiteboard", "Monitor", "Power Outlets"))
                             .availableFrom(LocalTime.of(8, 0))
                             .availableTo(LocalTime.of(17, 0))
                             .build(),
@@ -58,7 +80,7 @@ public class FacilityDataInitializer {
                             .location("Main Hall")
                             .capacity(250)
                             .status(Facility.FacilityStatus.AVAILABLE)
-                            .amenities("Stage,PA System,Projector,Lighting")
+                            .amenities(linkedAmenities(amenities, "Stage", "PA System", "Projector", "Lighting"))
                             .availableFrom(LocalTime.of(8, 0))
                             .availableTo(LocalTime.of(17, 0))
                             .build(),
@@ -69,7 +91,7 @@ public class FacilityDataInitializer {
                             .location("Technology Block - Floor 1")
                             .capacity(24)
                             .status(Facility.FacilityStatus.AVAILABLE)
-                            .amenities("Workbenches,Soldering Stations,Storage")
+                            .amenities(linkedAmenities(amenities, "Workbenches", "Soldering Stations", "Storage"))
                             .availableFrom(LocalTime.of(8, 0))
                             .availableTo(LocalTime.of(17, 0))
                             .build(),
@@ -80,7 +102,7 @@ public class FacilityDataInitializer {
                             .location("Administration Building - Floor 1")
                             .capacity(20)
                             .status(Facility.FacilityStatus.AVAILABLE)
-                            .amenities("Projector,Video Conferencing,Whiteboard")
+                            .amenities(linkedAmenities(amenities, "Projector", "Video Conferencing", "Whiteboard"))
                             .availableFrom(LocalTime.of(8, 0))
                             .availableTo(LocalTime.of(17, 0))
                             .build());
@@ -88,5 +110,19 @@ public class FacilityDataInitializer {
             facilityRepository.saveAll(facilities);
             log.info("Seeded {} facilities for booking module", facilities.size());
         };
+    }
+
+    private Map<String, Amenity> seedAmenities(String... names) {
+        return java.util.Arrays.stream(names)
+                .distinct()
+                .map(name -> amenityRepository.findByName(name)
+                        .orElseGet(() -> amenityRepository.save(Amenity.builder().name(name).build())))
+                .collect(java.util.stream.Collectors.toMap(Amenity::getName, amenity -> amenity));
+    }
+
+    private Set<Amenity> linkedAmenities(Map<String, Amenity> amenities, String... names) {
+        return java.util.Arrays.stream(names)
+                .map(amenities::get)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 }

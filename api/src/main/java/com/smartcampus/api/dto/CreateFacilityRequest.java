@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -37,7 +38,7 @@ public class CreateFacilityRequest {
 
     private String imageUrl;
 
-    private String amenities;
+    private List<Long> amenityIds;
 
     @NotNull(message = "Available from time is required")
     private LocalTime availableFrom;

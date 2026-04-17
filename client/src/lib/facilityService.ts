@@ -2,6 +2,14 @@ import type { Facility, FacilityStatus, FacilityType } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080';
 
+export type FacilityFilters = {
+  name?: string;
+  location?: string;
+  facilityType?: FacilityType | '';
+  status?: FacilityStatus | '';
+  minCapacity?: number | '';
+};
+
 export type FacilityPayload = {
   name: string;
   description: string;
@@ -28,31 +36,27 @@ type RequestOptions = {
 };
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
-  if (response.status === 204) {
-    return null as T;
-  }
-
   const contentType = response.headers.get('content-type') || '';
-
   if (contentType.includes('application/json')) {
-    const data = (await response.json().catch(() => null)) as T | ApiError | null;
-
+    const data = await response.json();
     if (!response.ok) {
-      const errorData = data as ApiError | null;
-      const detailMessage = errorData?.details ? Object.values(errorData.details)[0] : undefined;
-      throw new Error(detailMessage || errorData?.message || errorData?.error || 'Request failed');
+      throw new Error(data?.message || data?.error || 'Request failed');
     }
-
     return data as T;
   }
-
-  const text = await response.text().catch(() => '');
-
+  const text = await response.text();
   if (!response.ok) {
     throw new Error(text || 'Request failed');
   }
-
   return text as T;
+};
+
+function isNetworkError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /(failed to fetch|networkerror|network error|connection refused|load failed)/i.test(error.message);
 }
 
 async function facilityRequest<T>(path: string, options: RequestOptions = {}) {
@@ -63,7 +67,7 @@ async function facilityRequest<T>(path: string, options: RequestOptions = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  if (token && method !== 'GET') {
+  if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -76,7 +80,7 @@ async function facilityRequest<T>(path: string, options: RequestOptions = {}) {
 
     return parseResponse<T>(response);
   } catch (error) {
-    if (error instanceof TypeError) {
+    if (error instanceof TypeError || isNetworkError(error)) {
       throw new Error(`Network error while calling ${API_BASE_URL}${path}`);
     }
 
@@ -84,15 +88,30 @@ async function facilityRequest<T>(path: string, options: RequestOptions = {}) {
   }
 }
 
-export async function getFacilities() {
-  return facilityRequest<Facility[]>('/api/facilities', {
+function buildFacilityQuery(filters: FacilityFilters = {}) {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value));
+    }
+  });
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+export async function getFacilities(token?: string | null, filters: FacilityFilters = {}) {
+  return facilityRequest<Facility[]>(`/api/facilities${buildFacilityQuery(filters)}`, {
     method: 'GET',
+    token,
   });
 }
 
-export async function getFacility(id: string) {
+export async function getFacility(id: string, token?: string | null) {
   return facilityRequest<Facility>(`/api/facilities/${id}`, {
     method: 'GET',
+    token,
   });
 }
 

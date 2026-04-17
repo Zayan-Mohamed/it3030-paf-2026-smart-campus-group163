@@ -24,7 +24,7 @@ type FacilityFormState = {
   capacity: string;
   status: FacilityStatus | '';
   imageUrl: string;
-  amenities: string;
+  otherAmenities: string;
   availableFrom: string;
   availableTo: string;
 };
@@ -42,8 +42,53 @@ const facilityTypes: FacilityType[] = [
 ];
 
 const facilityStatuses: FacilityStatus[] = ['AVAILABLE', 'UNDER_MAINTENANCE', 'UNAVAILABLE'];
+const amenityOptions = [
+  'Projector',
+  'WiFi',
+  'Air Conditioning',
+  'Whiteboard',
+  'Sound System',
+  'Microphone',
+  'Smart Board',
+  'Computers',
+  'Internet Access',
+  'Parking',
+  'Wheelchair Access',
+];
+
+function splitAmenities(value?: string | string[] | null) {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function splitAmenitySelections(value?: string | string[] | null) {
+  const amenities = splitAmenities(value);
+
+  return {
+    selectedAmenities: amenities.filter((amenity) => amenityOptions.includes(amenity)),
+    otherAmenities: amenities.filter((amenity) => !amenityOptions.includes(amenity)).join(', '),
+  };
+}
 
 function getInitialState(initialValues?: Facility | null): FacilityFormState {
+  const { otherAmenities } = splitAmenitySelections(initialValues?.amenities);
+
   return {
     name: initialValues?.name ?? '',
     description: initialValues?.description ?? '',
@@ -52,7 +97,7 @@ function getInitialState(initialValues?: Facility | null): FacilityFormState {
     capacity: initialValues?.capacity !== undefined ? String(initialValues.capacity) : '',
     status: initialValues?.status ?? '',
     imageUrl: initialValues?.imageUrl ?? '',
-    amenities: initialValues?.amenities ?? '',
+    otherAmenities,
     availableFrom: toTimeInputValue(initialValues?.availableFrom),
     availableTo: toTimeInputValue(initialValues?.availableTo),
   };
@@ -65,12 +110,14 @@ export const FacilityForm = ({
   onSubmit,
 }: FacilityFormProps) => {
   const [form, setForm] = useState<FacilityFormState>(() => getInitialState(initialValues));
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(() => splitAmenitySelections(initialValues?.amenities).selectedAmenities);
   const [fieldErrors, setFieldErrors] = useState<FacilityFormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setForm(getInitialState(initialValues));
+    setSelectedAmenities(splitAmenitySelections(initialValues?.amenities).selectedAmenities);
     setFieldErrors({});
     setSubmitError(null);
   }, [initialValues]);
@@ -128,6 +175,14 @@ export const FacilityForm = ({
     return Object.keys(nextErrors).length === 0;
   };
 
+  const handleAmenityToggle = (amenity: string) => {
+    setSelectedAmenities((current) =>
+      current.includes(amenity)
+        ? current.filter((item) => item !== amenity)
+        : [...current, amenity]
+    );
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -147,7 +202,10 @@ export const FacilityForm = ({
         capacity: Number(form.capacity),
         status: form.status as FacilityStatus,
         imageUrl: form.imageUrl.trim(),
-        amenities: form.amenities.trim(),
+        amenities: [
+          ...selectedAmenities,
+          ...splitAmenities(form.otherAmenities),
+        ].join(', '),
         availableFrom: normalizeFacilityTime(form.availableFrom),
         availableTo: normalizeFacilityTime(form.availableTo),
       });
@@ -309,14 +367,35 @@ export const FacilityForm = ({
         </div>
 
         <div className="mt-5">
-          <label htmlFor="amenities" className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Amenities
           </label>
-          <input
-            id="amenities"
-            name="amenities"
-            value={form.amenities}
+          <div className="grid gap-3 rounded-xl border border-slate-200 bg-white px-4 py-4 md:grid-cols-2">
+            {amenityOptions.map((amenity) => (
+              <label key={amenity} className="flex items-center gap-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={selectedAmenities.includes(amenity)}
+                  onChange={() => handleAmenityToggle(amenity)}
+                  className="size-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-200"
+                />
+                <span>{amenity}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <label htmlFor="otherAmenities" className="mb-2 block text-sm font-medium text-slate-700">
+            Other Amenities
+          </label>
+          <textarea
+            id="otherAmenities"
+            name="otherAmenities"
+            rows={3}
+            value={form.otherAmenities}
             onChange={updateField}
+            placeholder="Enter any other amenities, separated by commas"
             className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
           />
         </div>

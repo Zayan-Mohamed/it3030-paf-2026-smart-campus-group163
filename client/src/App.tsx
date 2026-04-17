@@ -26,6 +26,8 @@ import { StaffDashboard } from './pages/StaffDashboard';
 import { FacilityList } from './pages/FacilityList';
 import { AddFacility } from './pages/AddFacility';
 import { EditFacility } from './pages/EditFacility';
+import { StaffFacilitiesPage } from './pages/StaffFacilitiesPage';
+import { StudentFacilitiesPage } from './pages/StudentFacilitiesPage';
 import { MainLayout } from './layouts/MainLayout';
 import { UsersListPage } from './pages/UsersListPage';
 import { StudentSettingsPage } from './pages/StudentSettingsPage';
@@ -95,6 +97,8 @@ ticket-flow
               <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'STAFF']} />}>
                 <Route path="/bookings" element={<BookingListPage />} />
                 <Route path="/bookings/new" element={<BookingFormPage />} />
+                <Route path="/dashboard/student/bookings/new" element={<BookingFormPage />} />
+                <Route path="/dashboard/staff/bookings/new" element={<BookingFormPage />} />
                 <Route path="/bookings/calendar" element={<BookingCalendarPage />} />
                 <Route path="/bookings/:bookingId" element={<BookingDetailsPage />} />
                 <Route path="/bookings/:bookingId/edit" element={<BookingFormPage />} />
@@ -103,13 +107,13 @@ ticket-flow
               {/* Protected Role-Based Dashboards */}
               <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'ADMIN']} />}>
                 <Route path="/dashboard/student" element={<StudentDashboard />} />
+                <Route path="/dashboard/student/facilities" element={<StudentFacilitiesPage />} />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path="/dashboard/admin" element={<AdminDashboard />} />
                 <Route path="/admin/facilities" element={<FacilityList />} />
                 <Route path="/admin/facilities/new" element={<AddFacility />} />
-                <Route path="/admin/facilities/:facilityId/edit" element={<EditFacility />} />
                 <Route path="/admin/users" element={<UsersListPage />} />
  ticket-flow
                 <Route path="/admin/incidents" element={
@@ -118,24 +122,25 @@ ticket-flow
                   </main>
                 } />
 
+                <Route path="/dashboard/admin/facilities/:id/edit" element={<EditFacility />} />
                 <Route path="/admin/bookings" element={<ManageBookingsPage />} />
  main
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['STAFF', 'ADMIN']} />}>
                 <Route path="/dashboard/staff" element={<StaffDashboard />} />
- ticket-flow
                 <Route path="/incidents/queue" element={
                   <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
                     <IncidentQueuePage />
                   </main>
                 } />
- main
               </Route>
               
               {/* AI Assistant accessible to all authenticated users */}
               <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'STAFF', 'ADMIN']} />}>
                 <Route path="/ai-assistant" element={<AITester />} />
+                <Route path="/dashboard/staff/facilities" element={<StaffFacilitiesPage />} />
+                <Route path="/users" element={<UsersListPage />} />
               </Route>
             </Route>
 

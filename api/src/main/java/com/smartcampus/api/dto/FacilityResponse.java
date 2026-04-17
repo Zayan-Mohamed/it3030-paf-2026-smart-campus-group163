@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -31,7 +32,7 @@ public class FacilityResponse {
 
     private String imageUrl;
 
-    private String amenities;
+    private List<AmenityResponse> amenities;
 
     private LocalTime availableFrom;
 

@@ -13,13 +13,23 @@ import type { Facility } from '../types';
 export const EditFacility = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const { facilityId } = useParams<{ facilityId: string }>();
+  const { id } = useParams<{ id: string }>();
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token || !facilityId) {
+    if (!id) {
+      setFacility(null);
+      setError('Facility id is missing from the URL.');
+      setLoading(false);
+      return;
+    }
+
+    if (!token) {
+      setFacility(null);
+      setError('You must be signed in to load this facility.');
+      setLoading(false);
       return;
     }
 
@@ -28,9 +38,10 @@ export const EditFacility = () => {
     const loadFacility = async () => {
       setLoading(true);
       setError(null);
+      setFacility(null);
 
       try {
-        const data = await getFacility(facilityId);
+        const data = await getFacility(id, token);
         if (active) {
           setFacility(data);
         }
@@ -51,14 +62,14 @@ export const EditFacility = () => {
     return () => {
       active = false;
     };
-  }, [facilityId, token]);
+  }, [id, token]);
 
   const handleSubmit = async (payload: FacilityPayload) => {
-    if (!token || !facilityId) {
+    if (!token || !id) {
       throw new Error('Unable to update facility.');
     }
 
-    await updateFacility(token, facilityId, payload);
+    await updateFacility(token, id, payload);
     navigate('/admin/facilities');
   };
 

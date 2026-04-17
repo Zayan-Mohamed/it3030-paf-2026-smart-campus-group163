@@ -1,11 +1,14 @@
 package com.smartcampus.api.service;
 
+import com.smartcampus.api.dto.AmenityResponse;
 import com.smartcampus.api.dto.CreateFacilityRequest;
 import com.smartcampus.api.dto.FacilityResponse;
 import com.smartcampus.api.dto.UpdateFacilityRequest;
+import com.smartcampus.api.model.Amenity;
 import com.smartcampus.api.exception.DuplicateFacilityException;
 import com.smartcampus.api.exception.FacilityNotFoundException;
 import com.smartcampus.api.model.Facility;
+import com.smartcampus.api.repository.AmenityRepository;
 import com.smartcampus.api.repository.FacilityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
@@ -13,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,7 @@ import java.util.List;
 public class FacilityServiceImpl implements FacilityService {
 
     private final FacilityRepository facilityRepository;
+    private final AmenityRepository amenityRepository;
 
     @Override
     public FacilityResponse create(CreateFacilityRequest request) {
@@ -38,7 +44,7 @@ public class FacilityServiceImpl implements FacilityService {
                 .capacity(request.getCapacity())
                 .status(request.getStatus())
                 .imageUrl(request.getImageUrl())
-                .amenities(request.getAmenities())
+                .amenities(resolveAmenities(request.getAmenityIds()))
                 .availableFrom(request.getAvailableFrom())
                 .availableTo(request.getAvailableTo())
                 .build();
@@ -105,8 +111,8 @@ public class FacilityServiceImpl implements FacilityService {
         if (request.getImageUrl() != null) {
             facility.setImageUrl(request.getImageUrl());
         }
-        if (request.getAmenities() != null) {
-            facility.setAmenities(request.getAmenities());
+        if (request.getAmenityIds() != null) {
+            facility.setAmenities(resolveAmenities(request.getAmenityIds()));
         }
         if (request.getAvailableFrom() != null) {
             facility.setAvailableFrom(request.getAvailableFrom());
@@ -184,11 +190,40 @@ public class FacilityServiceImpl implements FacilityService {
                 .capacity(facility.getCapacity())
                 .status(facility.getStatus())
                 .imageUrl(facility.getImageUrl())
-                .amenities(facility.getAmenities())
+                .amenities(facility.getAmenities().stream()
+                        .map(this::mapAmenityResponse)
+                        .toList())
                 .availableFrom(facility.getAvailableFrom())
                 .availableTo(facility.getAvailableTo())
                 .createdAt(facility.getCreatedAt())
                 .updatedAt(facility.getUpdatedAt())
+                .build();
+    }
+
+    private Set<Amenity> resolveAmenities(List<Long> amenityIds) {
+        if (amenityIds == null || amenityIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        List<Amenity> amenities = amenityRepository.findAllById(amenityIds);
+        if (amenities.size() != amenityIds.size()) {
+            Set<Long> foundIds = amenities.stream()
+                    .map(Amenity::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            List<Long> missingIds = amenityIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .distinct()
+                    .toList();
+            throw new IllegalArgumentException("Amenities not found for ids: " + missingIds);
+        }
+
+        return new LinkedHashSet<>(amenities);
+    }
+
+    private AmenityResponse mapAmenityResponse(Amenity amenity) {
+        return AmenityResponse.builder()
+                .id(amenity.getId())
+                .name(amenity.getName())
                 .build();
     }
 }

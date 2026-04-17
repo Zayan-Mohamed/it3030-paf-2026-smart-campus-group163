@@ -8,6 +8,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -21,6 +24,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "facilities", indexes = {
@@ -67,7 +72,14 @@ public class Facility {
     @Column(name = "image_url")
     private String imageUrl;
 
-    private String amenities;
+    @Builder.Default
+    @ManyToMany
+    @JoinTable(
+            name = "facility_amenities",
+            joinColumns = @JoinColumn(name = "facility_id"),
+            inverseJoinColumns = @JoinColumn(name = "amenity_id")
+    )
+    private Set<Amenity> amenities = new LinkedHashSet<>();
 
     @NotNull(message = "Available from time is required")
     @Column(name = "available_from", nullable = false, columnDefinition = "time(0) default '08:00:00'")

@@ -34,7 +34,7 @@ export const FacilityList = () => {
       setError(null);
 
       try {
-        const data = await getFacilities();
+        const data = await getFacilities(token);
         if (active) {
           setFacilities(data);
         }
@@ -216,7 +216,7 @@ export const FacilityList = () => {
                       <td className="rounded-r-2xl px-4 py-4">
                         <div className="flex flex-wrap gap-2">
                           <Link
-                            to={`/admin/facilities/${facility.id}/edit`}
+                            to={`/dashboard/admin/facilities/${facility.id}/edit`}
                             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
                           >
                             <Pencil size={14} />
