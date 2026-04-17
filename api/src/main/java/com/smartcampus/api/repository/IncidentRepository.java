@@ -8,4 +8,8 @@ import java.util.List;
 
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findByReporterOrderByCreatedAtDesc(User reporter);
+
+    List<Incident> findByAssignedToOrderByCreatedAtDesc(User assignedTo);
+
+    List<Incident> findAllByOrderByCreatedAtDesc();
 }

@@ -112,6 +112,12 @@ public class Incident {
     private String resolutionNotes;
 
     /**
+     * Rejection reason provided by admin when ticket is cancelled.
+     */
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    /**
      * Timestamp when incident was resolved
      */
     @Column(name = "resolved_at")
