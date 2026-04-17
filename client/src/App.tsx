@@ -29,6 +29,7 @@ import { EditFacility } from './pages/EditFacility';
 import { MainLayout } from './layouts/MainLayout';
 import { UsersListPage } from './pages/UsersListPage';
 import { StudentSettingsPage } from './pages/StudentSettingsPage';
+import { AITester } from './components/ai/AITester';
 import './App.css';
 
 /**
@@ -131,6 +132,11 @@ ticket-flow
 
                 <Route path="/users" element={<UsersListPage />} />
  main
+              </Route>
+              
+              {/* AI Assistant accessible to all authenticated users */}
+              <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'STAFF', 'ADMIN']} />}>
+                <Route path="/ai-assistant" element={<AITester />} />
               </Route>
             </Route>
 

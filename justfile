@@ -15,4 +15,6 @@ spring:
 
 dev:
    cd client/ && npm run dev
-
+   
+uv:
+    cd ai-service/ && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload

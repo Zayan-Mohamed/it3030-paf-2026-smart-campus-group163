@@ -1,0 +1,13 @@
+
+    Campus IT Manual
+    ---
+    Resetting the Main Campus Router:
+    1. Locate the router in the Server Room (Bldg 4).
+    2. Power down the attached switch first.
+    3. Press and hold the red 'RESET' button on the back panel for 15 seconds.
+    4. Wait for the status light to blink green before powering the switch back on.
+    
+    Lab Safety Protocols:
+    - Always wear safety goggles when handling chemicals.
+    - In case of a chemical spill, use the yellow spill kit located near the exit.
+    

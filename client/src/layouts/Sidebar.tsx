@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import {
   Home, Users, Building2, AlertTriangle, Calendar, BarChart3, Settings, FileText,
-  LogOut, ChevronLeft, ChevronRight, Map, PartyPopper, Wrench
+  LogOut, ChevronLeft, ChevronRight, Map, PartyPopper, Wrench, Sparkles
 } from 'lucide-react';
 import '../styles/Dashboard.css';
 
@@ -61,6 +61,10 @@ export const Sidebar = () => {
               <span className="nav-icon"><Home size={20} /></span>
               {sidebarOpen && <span>Dashboard</span>}
             </Link>
+            <Link to="/ai-assistant" className={cn("nav-item", checkActive('/ai-assistant') && "active")}>
+              <span className="nav-icon"><Sparkles size={20} /></span>
+              {sidebarOpen && <span>AI Assistant</span>}
+            </Link>
             <Link to="/admin/users" className={cn("nav-item", checkActive('/admin/users') && "active")}>
               <span className="nav-icon"><Users size={20} /></span>
               {sidebarOpen && <span>User Management</span>}
@@ -98,6 +102,10 @@ export const Sidebar = () => {
               <span className="nav-icon"><Home size={20} /></span>
               {sidebarOpen && <span>Dashboard</span>}
             </Link>
+            <Link to="/ai-assistant" className={cn("nav-item", checkActive('/ai-assistant') && "active")}>
+              <span className="nav-icon"><Sparkles size={20} /></span>
+              {sidebarOpen && <span>AI Assistant</span>}
+            </Link>
             <Link to="/incidents/queue" className={cn("nav-item", checkActive('/incidents/queue') && "active")}>
               <span className="nav-icon"><AlertTriangle size={20} /></span>
               {sidebarOpen && <span>Incident Queue</span>}
@@ -126,6 +134,10 @@ export const Sidebar = () => {
             <Link to="/dashboard/student" className={cn("nav-item", checkActive('/dashboard/student') && "active")}>
               <span className="nav-icon"><Home size={20} /></span>
               {sidebarOpen && <span>Dashboard</span>}
+            </Link>
+            <Link to="/ai-assistant" className={cn("nav-item", checkActive('/ai-assistant') && "active")}>
+              <span className="nav-icon"><Sparkles size={20} /></span>
+              {sidebarOpen && <span>AI Assistant</span>}
             </Link>
             <Link to="/bookings" className={cn("nav-item", checkActive('/bookings') && "active")}>
               <span className="nav-icon"><Calendar size={20} /></span>
