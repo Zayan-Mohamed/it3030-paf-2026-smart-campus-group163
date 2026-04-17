@@ -26,6 +26,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const [unreadCount, setUnreadCount] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
     const [connected, setConnected] = useState<boolean>(false);
+    const [notificationsAvailable, setNotificationsAvailable] = useState<boolean>(true);
 
     const clientRef = useRef<Client | null>(null);
     const subscriptionRef = useRef<StompSubscription | null>(null);
@@ -54,8 +55,14 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                 console.log('[Notifications] Fetched', data.length, 'notifications:', data);
                 setNotifications(data);
                 setUnreadCount(data.filter(n => !n.isRead).length);
+                setNotificationsAvailable(true);
             } else {
                 console.error('[Notifications] API returned error:', response.status, await response.text());
+                if (response.status === 404) {
+                    setNotificationsAvailable(false);
+                    setNotifications([]);
+                    setUnreadCount(0);
+                }
             }
         } catch (error) {
             console.error('[Notifications] Failed to fetch notifications:', error);
@@ -68,7 +75,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
      * Fetch unread count from REST API
      */
     const fetchUnreadCount = useCallback(async () => {
-        if (!token) return;
+        if (!token || !notificationsAvailable) return;
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/v1/notifications/count`, {
@@ -80,17 +87,21 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             if (response.ok) {
                 const data = await response.json();
                 setUnreadCount(data.count);
+                setNotificationsAvailable(true);
+            } else if (response.status === 404) {
+                setNotificationsAvailable(false);
+                setUnreadCount(0);
             }
         } catch (error) {
             console.error('Failed to fetch unread count:', error);
         }
-    }, [token]);
+    }, [token, notificationsAvailable]);
 
     /**
      * Connect to WebSocket for real-time notifications
      */
     useEffect(() => {
-        if (!token || !user) {
+        if (!token || !user || !notificationsAvailable) {
             return;
         }
 

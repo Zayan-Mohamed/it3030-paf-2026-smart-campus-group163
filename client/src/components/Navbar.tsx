@@ -46,7 +46,6 @@ export const Navbar = () => {
         <div className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
-ticket-flow
               <Link to="/dashboard" className="text-sm font-semibold text-slate-700 transition hover:text-slate-900">
                 Dashboard
               </Link>
