@@ -1,14 +1,12 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { NotificationBell } from './NotificationBell';
-import { LayoutDashboard, PlusCircle, LogOut, Code2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { LogOut, Code2 } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -46,60 +44,6 @@ export const Navbar = () => {
         <div className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
-              <Link to="/dashboard" className="text-sm font-semibold text-slate-700 transition hover:text-slate-900">
-                Dashboard
-              </Link>
-            
-              <Link to="/incidents/new" className="text-sm font-semibold text-cyan-700 transition hover:text-cyan-800">
-                Report Incident
-              </Link>
-              <Link to="/incidents" className="text-sm font-semibold text-blue-700 transition hover:text-blue-800">
-                My Incidents
-              </Link>
-              <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 sm:inline">{user.email}</span>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                Logout
-              </Button>
-
-              {/* Quick Links */}
-              <div className="hidden md:flex items-center gap-2 mr-2">
-                <Link to="/dashboard">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className={cn(
-                      "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80",
-                      location.pathname === '/dashboard' && "bg-slate-100 text-slate-900 font-medium"
-                    )}
-                  >
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Button>
-                </Link>
-              
-                <Link to="/incidents/new">
-                  <Button 
-                    size="sm" 
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white shadow-md shadow-cyan-600/20 transition-all"
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Report Incident
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Mobile Quick Link (Icon Only) */}
-              <div className="flex md:hidden items-center gap-1">
-                <Link to="/incidents/new">
-                  <Button size="icon" variant="ghost" className="text-cyan-600 hover:bg-cyan-50">
-                    <PlusCircle className="h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Vertical Divider */}
-              <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
-
               {/* Notifications */}
               <div className="flex items-center justify-center px-1">
                 <NotificationBell />
@@ -145,7 +89,6 @@ export const Navbar = () => {
                   <span className="sr-only">Logout</span>
                 </Button>
               </div>
- main
             </>
           ) : (
             <div className="flex items-center gap-3">
