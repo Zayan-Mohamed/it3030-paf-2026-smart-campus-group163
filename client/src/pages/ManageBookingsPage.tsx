@@ -6,9 +6,12 @@ import {
   RefreshCw,
   Check,
   X,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { adminCancelBooking, bookingStatusClasses, bookingStatusLabel, formatDateTime, getBookings, reviewBooking } from '../lib/bookings';
+import { adminCancelBooking, bookingStatusClasses, bookingStatusLabel, bookingStatusBackgroundColor, formatDateTime, formatDate, formatTime, getBookings, reviewBooking, getPublicHolidays, isPublicHoliday } from '../lib/bookings';
 import type { Booking, BookingStatus } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -52,6 +55,8 @@ export const ManageBookingsPage = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
 
 
   const loadBookings = async () => {
@@ -180,6 +185,97 @@ export const ManageBookingsPage = () => {
     return secondUpdatedAt - firstUpdatedAt;
   });
 
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const getBookingsForDate = (date: Date) => {
+    const dateStr = formatDateKey(date);
+    return bookings.filter((booking) => toLocalDateKey(booking.startTime) === dateStr);
+  };
+
+  const formatDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const prevMonth = () => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1));
+  };
+
+  const renderCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(calendarMonth);
+    const firstDay = getFirstDayOfMonth(calendarMonth);
+    const days = [];
+
+    // Empty cells for days before month starts
+    for (let i = 0; i < firstDay; i++) {
+      days.push(
+        <div key={`empty-${i}`} className="aspect-square border border-slate-200 bg-slate-50"></div>
+      );
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+      const dateStr = formatDateKey(date);
+      const dayBookings = getBookingsForDate(date);
+      const holiday = isPublicHoliday(dateStr);
+      const isToday = new Date().toDateString() === date.toDateString();
+
+      days.push(
+        <div
+          key={day}
+          className={`aspect-square border-2 p-1.5 rounded-lg text-xs font-medium overflow-hidden flex flex-col ${
+            holiday
+              ? 'bg-gradient-to-br from-purple-300 to-purple-400 border-purple-600 shadow-lg'
+              : isToday
+                ? 'bg-blue-50 border-blue-400 shadow-md'
+                : dayBookings.length > 0
+                  ? 'bg-orange-50 border-orange-200'
+                  : 'bg-white border-slate-200'
+          }`}
+        >
+          <div className={`font-bold text-sm ${isToday ? 'text-blue-700' : holiday ? 'text-black' : 'text-slate-900'}`}>
+            {day}
+          </div>
+          {holiday && (
+            <div className="text-black text-xs font-bold whitespace-normal overflow-hidden mb-0.5 leading-tight">
+              {holiday.name}
+            </div>
+          )}
+          <div className="space-y-1 overflow-y-auto max-h-16 flex-1">
+            {dayBookings.map((booking) => (
+              <div
+                key={booking.id}
+                className={`px-1 py-0.5 rounded text-black text-xs font-bold ${bookingStatusBackgroundColor(booking.status)} shadow-sm leading-tight`}
+                title={`${booking.facilityName} - ${booking.status}`}
+              >
+                <div className="truncate">{booking.status}</div>
+                <div className="text-xs text-black font-semibold leading-tight">
+                  {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return days;
+  };
+
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
@@ -191,16 +287,27 @@ export const ManageBookingsPage = () => {
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Manage Bookings</h1>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void loadBookings()}
-              disabled={loading}
-              className="self-start md:self-center"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant={showCalendar ? 'default' : 'outline'}
+                onClick={() => setShowCalendar(!showCalendar)}
+                className="self-start md:self-center"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {showCalendar ? 'List View' : 'Calendar View'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void loadBookings()}
+                disabled={loading}
+                className="self-start md:self-center"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {/* Status Filter */}
@@ -249,6 +356,92 @@ export const ManageBookingsPage = () => {
             </CardContent>
           </Card>
 
+          {/* Calendar View */}
+          {showCalendar && (
+            <Card className="mb-6 border-slate-200/80 shadow-lg shadow-slate-900/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Booking Calendar</CardTitle>
+                    <CardDescription>View all bookings with color-coded statuses and public holidays.</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Button type="button" variant="outline" size="sm" onClick={prevMonth}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="min-w-40 text-center font-semibold text-slate-900">
+                      {calendarMonth.toLocaleDateString('en-LK', { month: 'long', year: 'numeric' })}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={nextMonth}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Legend */}
+                  <div className="grid gap-3 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 p-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-purple-300 to-purple-400 border-2 border-purple-600 flex-shrink-0 shadow-sm"></div>
+                      <div className="text-sm">
+                        <p className="font-bold text-slate-900">Public Holiday</p>
+                        <p className="text-xs text-slate-600">Holiday with full name displayed</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded bg-amber-300 flex-shrink-0 shadow-sm"></div>
+                      <div className="text-sm">
+                        <p className="font-bold text-slate-900">PENDING</p>
+                        <p className="text-xs text-slate-600">Awaiting approval</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded bg-emerald-300 flex-shrink-0 shadow-sm"></div>
+                      <div className="text-sm">
+                        <p className="font-bold text-slate-900">APPROVED</p>
+                        <p className="text-xs text-slate-600">Booking approved</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded bg-red-300 flex-shrink-0 shadow-sm"></div>
+                      <div className="text-sm">
+                        <p className="font-bold text-slate-900">REJECTED</p>
+                        <p className="text-xs text-slate-600">Booking rejected</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded bg-blue-300 flex-shrink-0 shadow-sm"></div>
+                      <div className="text-sm">
+                        <p className="font-bold text-slate-900">COMPLETED</p>
+                        <p className="text-xs text-slate-600">Booking completed</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded bg-gray-400 flex-shrink-0 shadow-sm"></div>
+                      <div className="text-sm">
+                        <p className="font-bold text-slate-900">CANCELLED</p>
+                        <p className="text-xs text-slate-600">Booking cancelled</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div>
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                        <div key={day} className="text-center text-xs font-bold text-slate-700 py-2">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Messages */}
           {error && (
             <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -264,8 +457,10 @@ export const ManageBookingsPage = () => {
             </div>
           )}
 
-          {/* Bookings List */}
-          {loading ? (
+          {/* Bookings List - Only show when calendar view is hidden */}
+          {!showCalendar && (
+            <>
+              {loading ? (
             <Card>
               <CardContent className="py-12 text-center text-sm text-slate-500">Loading bookings...</CardContent>
             </Card>
@@ -442,6 +637,8 @@ export const ManageBookingsPage = () => {
                 </Card>
               ))}
             </div>
+          )}
+            </>
           )}
         </div>
       </main>
