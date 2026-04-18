@@ -1,13 +1,13 @@
-import type { Facility, FacilityStatus, FacilityType } from '../types';
+import type { Facility, FacilityStatus, FacilityType } from "../types";
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export type FacilityFilters = {
   name?: string;
   location?: string;
-  facilityType?: FacilityType | '';
-  status?: FacilityStatus | '';
-  minCapacity?: number | '';
+  facilityType?: FacilityType | "";
+  status?: FacilityStatus | "";
+  minCapacity?: number | "";
 };
 
 export type FacilityPayload = {
@@ -30,23 +30,24 @@ type ApiError = {
 };
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   token?: string | null;
   body?: string;
 };
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
-  const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data?.message || data?.error || 'Request failed');
+      const errorData = data as ApiError;
+      throw new Error(errorData.message || errorData.error || "Request failed");
     }
     return data as T;
   }
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(text || 'Request failed');
+    throw new Error(text || "Request failed");
   }
   return text as T;
 };
@@ -56,15 +57,17 @@ function isNetworkError(error: unknown) {
     return false;
   }
 
-  return /(failed to fetch|networkerror|network error|connection refused|load failed)/i.test(error.message);
+  return /(failed to fetch|networkerror|network error|connection refused|load failed)/i.test(
+    error.message,
+  );
 }
 
 async function facilityRequest<T>(path: string, options: RequestOptions = {}) {
-  const { method = 'GET', token, body } = options;
+  const { method = "GET", token, body } = options;
   const headers: Record<string, string> = {};
 
   if (body) {
-    headers['Content-Type'] = 'application/json';
+    headers["Content-Type"] = "application/json";
   }
 
   if (token) {
@@ -92,40 +95,50 @@ function buildFacilityQuery(filters: FacilityFilters = {}) {
   const params = new URLSearchParams();
 
   Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
+    if (value !== undefined && value !== null && value !== "") {
       params.set(key, String(value));
     }
   });
 
   const query = params.toString();
-  return query ? `?${query}` : '';
+  return query ? `?${query}` : "";
 }
 
-export async function getFacilities(token?: string | null, filters: FacilityFilters = {}) {
-  return facilityRequest<Facility[]>(`/api/facilities${buildFacilityQuery(filters)}`, {
-    method: 'GET',
-    token,
-  });
+export async function getFacilities(
+  token?: string | null,
+  filters: FacilityFilters = {},
+) {
+  return facilityRequest<Facility[]>(
+    `/api/facilities${buildFacilityQuery(filters)}`,
+    {
+      method: "GET",
+      token,
+    },
+  );
 }
 
 export async function getFacility(id: string, token?: string | null) {
   return facilityRequest<Facility>(`/api/facilities/${id}`, {
-    method: 'GET',
+    method: "GET",
     token,
   });
 }
 
 export async function createFacility(token: string, payload: FacilityPayload) {
-  return facilityRequest<Facility>('/api/facilities', {
-    method: 'POST',
+  return facilityRequest<Facility>("/api/facilities", {
+    method: "POST",
     token,
     body: JSON.stringify(payload),
   });
 }
 
-export async function updateFacility(token: string, id: string, payload: FacilityPayload) {
+export async function updateFacility(
+  token: string,
+  id: string,
+  payload: FacilityPayload,
+) {
   return facilityRequest<Facility>(`/api/facilities/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     token,
     body: JSON.stringify(payload),
   });
@@ -133,7 +146,7 @@ export async function updateFacility(token: string, id: string, payload: Facilit
 
 export async function deleteFacility(token: string, id: number) {
   await facilityRequest<void>(`/api/facilities/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     token,
   });
 }
@@ -148,16 +161,16 @@ export function normalizeFacilityTime(value: string) {
 
 export function toTimeInputValue(value?: string | null) {
   if (!value) {
-    return '';
+    return "";
   }
 
   return value.slice(0, 5);
 }
 
 export function facilityTypeLabel(value: FacilityType) {
-  return value.replaceAll('_', ' ');
+  return value.replaceAll("_", " ");
 }
 
 export function facilityStatusLabel(value: FacilityStatus) {
-  return value.replaceAll('_', ' ');
+  return value.replaceAll("_", " ");
 }
