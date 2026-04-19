@@ -267,6 +267,8 @@ export const BookingFormPage = () => {
         ? await updateBooking(token, bookingId, payload)
         : await createBooking(token, payload);
 
+      window.alert(isEditMode ? 'Booking updated successfully' : 'Booking created successfully');
+
       navigate(`/bookings/${savedBooking.id}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to save booking.');
