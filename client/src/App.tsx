@@ -19,6 +19,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardRedirect } from './components/DashboardRedirect';
 
 import { Unauthorized } from './pages/Unauthorized';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 import { CompleteProfile } from './pages/CompleteProfile';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -31,6 +32,7 @@ import { StudentFacilitiesPage } from './pages/StudentFacilitiesPage';
 import { MainLayout } from './layouts/MainLayout';
 import { UsersListPage } from './pages/UsersListPage';
 import { StudentSettingsPage } from './pages/StudentSettingsPage';
+import CampusEventsPage from './pages/CampusEventsPage';
 import { AITester } from './components/ai/AITester';
 import './App.css';
 
@@ -112,6 +114,7 @@ ticket-flow
 
               <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path="/dashboard/admin" element={<AdminDashboard />} />
+                <Route path="/admin/analytics" element={<AnalyticsPage />} />
                 <Route path="/admin/facilities" element={<FacilityList />} />
                 <Route path="/admin/facilities/new" element={<AddFacility />} />
                 <Route path="/admin/users" element={<UsersListPage />} />
@@ -141,6 +144,7 @@ ticket-flow
                 <Route path="/ai-assistant" element={<AITester />} />
                 <Route path="/dashboard/staff/facilities" element={<StaffFacilitiesPage />} />
                 <Route path="/users" element={<UsersListPage />} />
+                <Route path="/events" element={<CampusEventsPage />} />
               </Route>
             </Route>
 

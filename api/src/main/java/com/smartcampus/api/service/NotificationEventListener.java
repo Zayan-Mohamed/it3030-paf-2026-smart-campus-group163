@@ -2,6 +2,7 @@ package com.smartcampus.api.service;
 
 import com.smartcampus.api.dto.NotificationDTO;
 import com.smartcampus.api.event.BookingUpdatedEvent;
+import com.smartcampus.api.event.CampusEventUpdatedEvent;
 import com.smartcampus.api.event.CommentAddedEvent;
 import com.smartcampus.api.event.TicketUpdatedEvent;
 import com.smartcampus.api.model.Notification;
@@ -51,10 +52,17 @@ public class NotificationEventListener {
             Notification savedNotification = notificationRepository.save(notification);
             log.info("Notification created with ID: {}", savedNotification.getId());
             
-            // Convert to DTO for WebSocket (will be used in Phase 3)
+            // Convert to DTO for WebSocket
             NotificationDTO notificationDTO = convertToDTO(savedNotification);
             
-            // TODO: Phase 3 - Push to WebSocket using SimpMessagingTemplate
+            // Push to WebSocket - send to specific user's queue
+            String userEmail = event.getRecipient().getEmail();
+            messagingTemplate.convertAndSendToUser(
+                    userEmail,
+                    "/queue/notifications",
+                    notificationDTO
+            );
+            log.info("Notification pushed to WebSocket for user: {}", userEmail);
             
         } catch (Exception e) {
             log.error("Error handling BookingUpdatedEvent for booking ID: {}", 
@@ -158,6 +166,51 @@ public class NotificationEventListener {
      * @param notification The notification entity
      * @return NotificationDTO
      */
+    /**
+     * Handle CampusEventUpdatedEvent by creating and saving a notification.
+     * Runs asynchronously to avoid blocking the main business logic.
+     * 
+     * @param event The campus event updated event
+     */
+    @EventListener
+    @Async
+    @Transactional
+    public void handleCampusEventUpdatedEvent(CampusEventUpdatedEvent event) {
+        try {
+            log.info("Handling CampusEventUpdatedEvent for event ID: {} and recipient: {}", 
+                    event.getEvent().getId(), event.getRecipient().getEmail());
+            
+            // Create and save notification
+            Notification notification = Notification.builder()
+                    .recipient(event.getRecipient())
+                    .message(event.getMessage())
+                    .type(NotificationType.CAMPUS_EVENT_UPDATE)
+                    .isRead(false)
+                    .referenceId(event.getEvent().getId().toString())
+                    .referenceType("CAMPUS_EVENT")
+                    .build();
+            
+            Notification savedNotification = notificationRepository.save(notification);
+            log.info("Notification created with ID: {}", savedNotification.getId());
+            
+            // Convert to DTO for WebSocket
+            NotificationDTO notificationDTO = convertToDTO(savedNotification);
+            
+            // Push to WebSocket - send to specific user's queue
+            String userEmail = event.getRecipient().getEmail();
+            messagingTemplate.convertAndSendToUser(
+                    userEmail,
+                    "/queue/notifications",
+                    notificationDTO
+            );
+            log.info("Notification pushed to WebSocket for user: {}", userEmail);
+            
+        } catch (Exception e) {
+            log.error("Error handling CampusEventUpdatedEvent for event ID: {}", 
+                    event.getEvent().getId(), e);
+        }
+    }
+
     private NotificationDTO convertToDTO(Notification notification) {
         return NotificationDTO.builder()
                 .id(notification.getId())

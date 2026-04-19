@@ -1,7 +1,6 @@
 package com.smartcampus.api.dto.user;
 
 import com.smartcampus.api.model.Role;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

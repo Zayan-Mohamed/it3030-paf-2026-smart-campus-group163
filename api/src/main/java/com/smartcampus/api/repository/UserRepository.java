@@ -39,4 +39,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT DISTINCT u FROM User u JOIN u.roles r WHERE r IN ('STAFF', 'ADMIN')")
     List<User> findAllStaffAndAdmins();
+
+    /**
+     * Find top 5 recent users
+     */
+    List<User> findTop5ByOrderByCreatedAtDesc();
 }

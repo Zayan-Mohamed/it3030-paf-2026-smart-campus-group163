@@ -18,5 +18,10 @@ public enum NotificationType {
     /**
      * Notification for new comments on incidents or bookings
      */
-    NEW_COMMENT
+    NEW_COMMENT,
+    
+    /**
+     * Notification related to campus events (creation, squad updates)
+     */
+    CAMPUS_EVENT_UPDATE
 }

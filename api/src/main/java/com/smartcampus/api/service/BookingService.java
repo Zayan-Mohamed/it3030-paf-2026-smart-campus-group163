@@ -12,6 +12,8 @@ import com.smartcampus.api.model.Role;
 import com.smartcampus.api.model.User;
 import com.smartcampus.api.repository.BookingRepository;
 import com.smartcampus.api.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import com.smartcampus.api.event.BookingUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final FacilityService facilityService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<BookingResponse> getBookings(
@@ -76,6 +79,10 @@ public class BookingService {
                 .build();
 
         Booking saved = bookingRepository.save(booking);
+        String message = String.format("Your booking request for %s on %s has been created and is pending review.", 
+            saved.getFacility().getName(), 
+            saved.getStartTime().toLocalDate().toString());
+        eventPublisher.publishEvent(new BookingUpdatedEvent(this, saved, currentUser, "CREATED", message));
         return mapToResponse(saved, currentUser);
     }
 
@@ -102,7 +109,12 @@ public class BookingService {
         booking.setReviewedAt(null);
         booking.setReviewedBy(null);
 
-        return mapToResponse(bookingRepository.save(booking), currentUser);
+        Booking saved = bookingRepository.save(booking);
+        String message = String.format("Your booking request for %s on %s has been updated.", 
+            saved.getFacility().getName(), 
+            saved.getStartTime().toLocalDate().toString());
+        eventPublisher.publishEvent(new BookingUpdatedEvent(this, saved, booking.getUser(), "UPDATED", message));
+        return mapToResponse(saved, currentUser);
     }
 
     @Transactional
@@ -118,6 +130,10 @@ public class BookingService {
         }
 
         bookingRepository.delete(booking);
+        String message = String.format("Your booking request for %s on %s has been deleted.", 
+            booking.getFacility().getName(), 
+            booking.getStartTime().toLocalDate().toString());
+        eventPublisher.publishEvent(new BookingUpdatedEvent(this, booking, booking.getUser(), "DELETED", message));
     }
 
     @Transactional
@@ -133,7 +149,12 @@ public class BookingService {
         }
 
         booking.setStatus(Booking.BookingStatus.CANCELLED);
-        return mapToResponse(bookingRepository.save(booking), currentUser);
+        Booking saved = bookingRepository.save(booking);
+        String message = String.format("Your booking request for %s on %s has been cancelled.", 
+            saved.getFacility().getName(), 
+            saved.getStartTime().toLocalDate().toString());
+        eventPublisher.publishEvent(new BookingUpdatedEvent(this, saved, booking.getUser(), "CANCELLED", message));
+        return mapToResponse(saved, currentUser);
     }
 
     @Transactional
@@ -161,7 +182,13 @@ public class BookingService {
         booking.setCancelledBy(admin);
         booking.setCancelledAt(LocalDateTime.now());
 
-        return mapToResponse(bookingRepository.save(booking), admin);
+        Booking saved = bookingRepository.save(booking);
+        String message = String.format("Your approved booking for %s on %s was cancelled by an admin. Reason: %s", 
+            saved.getFacility().getName(), 
+            saved.getStartTime().toLocalDate().toString(), 
+            reason);
+        eventPublisher.publishEvent(new BookingUpdatedEvent(this, saved, booking.getUser(), "ADMIN_CANCELLED", message));
+        return mapToResponse(saved, admin);
     }
 
     @Transactional
@@ -190,7 +217,13 @@ public class BookingService {
         booking.setReviewedBy(reviewer);
         booking.setReviewedAt(LocalDateTime.now());
 
-        return mapToResponse(bookingRepository.save(booking), reviewer);
+        Booking saved = bookingRepository.save(booking);
+        String message = String.format("Your booking request for %s on %s has been %s.", 
+            saved.getFacility().getName(), 
+            saved.getStartTime().toLocalDate().toString(),
+            request.getStatus().name().toLowerCase());
+        eventPublisher.publishEvent(new BookingUpdatedEvent(this, saved, booking.getUser(), request.getStatus().name(), message));
+        return mapToResponse(saved, reviewer);
     }
 
     @Transactional(readOnly = true)
