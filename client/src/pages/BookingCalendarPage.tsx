@@ -4,10 +4,11 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Gift,
   Plus,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { formatDate, formatTime, getBookingCalendar, getFacilities } from '../lib/bookings';
+import { formatDate, formatTime, getBookingCalendar, getFacilities, isPublicHoliday } from '../lib/bookings';
 import type { Booking, Facility } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -31,6 +32,13 @@ function toIso(date: Date) {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+function toLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export const BookingCalendarPage = () => {
@@ -167,17 +175,25 @@ export const BookingCalendarPage = () => {
                   const bookingDate = new Date(booking.startTime);
                   return bookingDate.toDateString() === day.toDateString();
                 });
+                const holiday = isPublicHoliday(toLocalDateKey(day));
 
                 return (
                   <Card key={day.toISOString()} className="border-slate-200/80 shadow-lg shadow-slate-900/5">
                     <CardHeader>
                       <CardTitle className="text-lg">{formatDate(day.toISOString())}</CardTitle>
-                      <CardDescription>{dayBookings.length} booking{dayBookings.length === 1 ? '' : 's'}</CardDescription>
+                      {holiday ? (
+                        <CardDescription className="flex items-center gap-2 text-xs font-semibold text-fuchsia-700">
+                          <Gift className="h-3.5 w-3.5" />
+                          {holiday.name}
+                        </CardDescription>
+                      ) : (
+                        <CardDescription>{dayBookings.length} booking{dayBookings.length === 1 ? '' : 's'}</CardDescription>
+                      )}
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {dayBookings.length === 0 ? (
-                        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
-                          No bookings scheduled.
+                        <div className={`rounded-lg border p-4 text-sm ${holiday ? 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700' : 'border-dashed border-slate-300 bg-slate-50 text-slate-500'}`}>
+                          {holiday ? `Public Holiday: ${holiday.name}` : 'No bookings scheduled.'}
                         </div>
                       ) : (
                         dayBookings.map((booking) => (
