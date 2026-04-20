@@ -41,6 +41,19 @@ const dateFilterLabel = (value: string) => {
   return new Intl.DateTimeFormat('en-LK', { dateStyle: 'medium' }).format(date);
 };
 
+const toTimeOrZero = (value?: string | null) => {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+const getBookedOnValue = (booking: Booking) => booking.createdAt ?? booking.updatedAt ?? booking.startTime;
+
+const getBookedOnTimestamp = (booking: Booking) => toTimeOrZero(getBookedOnValue(booking));
+
 export const BookingListPage = () => {
   const { token } = useAuth();
   const location = useLocation();
@@ -120,7 +133,7 @@ export const BookingListPage = () => {
     const availableFacilityIds = new Set<number>();
     bookings.forEach((booking) => {
       const statusMatch = !statusFilter || booking.status === statusFilter;
-      const dateMatch = !bookedDateFilter || toLocalDateKey(booking.startTime) === bookedDateFilter;
+      const dateMatch = !bookedDateFilter || toLocalDateKey(getBookedOnValue(booking)) === bookedDateFilter;
       if (statusMatch && dateMatch) {
         availableFacilityIds.add(booking.facilityId);
       }
@@ -135,7 +148,7 @@ export const BookingListPage = () => {
       const statusMatch = !statusFilter || booking.status === statusFilter;
       const locationMatch = !facilityFilter || booking.facilityId === facilityFilter;
       if (statusMatch && locationMatch) {
-        availableDates.add(toLocalDateKey(booking.startTime));
+        availableDates.add(toLocalDateKey(getBookedOnValue(booking)));
       }
     });
     return Array.from(availableDates).sort((a, b) => a.localeCompare(b));
@@ -146,10 +159,19 @@ export const BookingListPage = () => {
     return bookings.filter((booking) => {
       const statusMatch = !statusFilter || booking.status === statusFilter;
       const locationMatch = !facilityFilter || booking.facilityId === facilityFilter;
-      const dateMatch = !bookedDateFilter || toLocalDateKey(booking.startTime) === bookedDateFilter;
+      const dateMatch = !bookedDateFilter || toLocalDateKey(getBookedOnValue(booking)) === bookedDateFilter;
       return statusMatch && locationMatch && dateMatch;
+    }).sort((first, second) => {
+      const latestByBookedOn = getBookedOnTimestamp(second) - getBookedOnTimestamp(first);
+      if (latestByBookedOn !== 0) {
+        return latestByBookedOn;
+      }
+
+      return second.id - first.id;
     });
   };
+
+  const filteredBookings = getFilteredBookings();
 
   return (
     <div className="dashboard-layout">
@@ -245,7 +267,7 @@ export const BookingListPage = () => {
             <Card>
               <CardContent className="py-12 text-center text-sm text-slate-500">Loading bookings...</CardContent>
             </Card>
-          ) : getFilteredBookings().length === 0 ? (
+          ) : filteredBookings.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-lg font-medium text-slate-900">No bookings found</p>
@@ -254,7 +276,7 @@ export const BookingListPage = () => {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {getFilteredBookings().map((booking) => (
+              {filteredBookings.map((booking) => (
                 <Card key={booking.id} className="border-slate-200/80 shadow-lg shadow-slate-900/5">
                   <CardContent className="pt-6">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -269,6 +291,7 @@ export const BookingListPage = () => {
                         <div className="grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                           <p><span className="font-medium text-slate-700">Location:</span> {booking.facilityLocation}</p>
                           <p><span className="font-medium text-slate-700">Attendees:</span> {booking.numberOfAttendees}</p>
+                          <p><span className="font-medium text-slate-700">Booked on:</span> {formatDateTime(getBookedOnValue(booking))}</p>
                           <p><span className="font-medium text-slate-700">Start:</span> {formatDateTime(booking.startTime)}</p>
                           <p><span className="font-medium text-slate-700">End:</span> {formatDateTime(booking.endTime)}</p>
                           {isStaffBookingRoute && (

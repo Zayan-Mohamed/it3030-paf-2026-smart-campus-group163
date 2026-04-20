@@ -17,7 +17,7 @@ import {
   toLocalDateTimeInputValue,
   updateBooking,
 } from '../lib/bookings';
-import type { BookingConflictResult, Facility } from '../types';
+import type { BookingAlternativeFacility, BookingAlternativeTimeSlot, BookingConflictResult, Facility } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -91,13 +91,18 @@ async function fetchFacilities(token: string): Promise<Facility[]> {
 }
 
 export const BookingFormPage = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { bookingId } = useParams<{ bookingId: string }>();
   const isEditMode = Boolean(bookingId);
-  const isStaffBookingRoute = location.pathname.startsWith('/dashboard/staff/bookings');
-  const isStudentBookingRoute = location.pathname.startsWith('/dashboard/student/bookings') || location.pathname.startsWith('/bookings');
+  const isStaffDashboardRoute = location.pathname.startsWith('/dashboard/staff/bookings');
+  const isStudentDashboardRoute = location.pathname.startsWith('/dashboard/student/bookings');
+  const isSharedBookingRoute = location.pathname.startsWith('/bookings');
+  const hasStaffRole = Boolean(user?.roles.includes('STAFF'));
+  const hasStudentRole = Boolean(user?.roles.includes('STUDENT'));
+  const isStaffBookingContext = isStaffDashboardRoute || (isSharedBookingRoute && hasStaffRole && !hasStudentRole);
+  const isStudentBookingContext = isStudentDashboardRoute || (isSharedBookingRoute && !isStaffBookingContext);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [form, setForm] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(true);
@@ -193,9 +198,9 @@ export const BookingFormPage = () => {
     setError(null);
   };
 
-  const facilitiesForRoute = isStaffBookingRoute
+  const facilitiesForRoute = isStaffBookingContext
     ? facilities.filter((facility) => STAFF_BOOKING_FACILITY_TYPES.has(facility.facilityType))
-    : isStudentBookingRoute
+    : isStudentBookingContext
       ? facilities.filter((facility) => STUDENT_BOOKING_FACILITY_TYPES.has(facility.facilityType))
     : facilities;
 
@@ -239,7 +244,6 @@ export const BookingFormPage = () => {
 
   const handleNameChange = (name: string) => {
     setSelectedName(name);
-    setSelectedType('');
     setSelectedLocation('');
     updateField('facilityId', '');
   };
@@ -253,6 +257,18 @@ export const BookingFormPage = () => {
   const handleLocationChange = (location: string) => {
     setSelectedLocation(location);
     resolveFacilityId(selectedName, selectedType, location);
+  };
+
+  const applyAlternativeTimeSlot = (slot: BookingAlternativeTimeSlot) => {
+    updateField('startTime', toLocalDateTimeInputValue(slot.startTime));
+    updateField('endTime', toLocalDateTimeInputValue(slot.endTime));
+  };
+
+  const applyAlternativeFacility = (facility: BookingAlternativeFacility) => {
+    setSelectedType(facility.facilityType);
+    setSelectedName(facility.name);
+    setSelectedLocation(facility.location);
+    updateField('facilityId', String(facility.id));
   };
 
   const validate = () => {
@@ -362,19 +378,7 @@ export const BookingFormPage = () => {
                 )}
 
                 <div className="grid gap-5 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="facilityName">Name</Label>
-                    <Select id="facilityName" value={selectedName} onChange={(event) => handleNameChange(event.target.value)}>
-                      <option value="">Select a name</option>
-                      {nameOptions.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                    </Select>
-                    {fieldErrors.facilityId && <p className="text-xs text-red-600">Select Name, Type, and Location</p>}
-                  </div>
-
+             
                   <div className="space-y-2">
                     <Label htmlFor="facilityType">Type</Label>
                     <Select id="facilityType" value={selectedType} onChange={(event) => handleTypeChange(event.target.value)}>
@@ -386,6 +390,19 @@ export const BookingFormPage = () => {
                       ))}
                     </Select>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="facilityName">Name</Label>
+                    <Select id="facilityName" value={selectedName} onChange={(event) => handleNameChange(event.target.value)}>
+                      <option value="">Select a name</option>
+                      {nameOptions.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </Select>
+                    {fieldErrors.facilityId && <p className="text-xs text-red-600">Select Name, Type, and Location</p>}
+                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="facilityLocation">Location</Label>
@@ -461,6 +478,45 @@ export const BookingFormPage = () => {
                             <p>Status: {conflict.status}</p>
                           </div>
                         ))}
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <p className="mb-2 text-sm font-semibold text-amber-900">Suggested Alternative Time Slots</p>
+                          {conflictResult.alternativeTimeSlots.length === 0 ? (
+                            <p className="text-xs text-amber-800">No nearby time slots found for this facility.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {conflictResult.alternativeTimeSlots.map((slot) => (
+                                <div key={`${slot.startTime}-${slot.endTime}`} className="rounded-md border border-amber-200 bg-white p-2">
+                                  <p className="text-xs text-slate-700">{formatDateTime(slot.startTime)} to {formatDateTime(slot.endTime)}</p>
+                                  <Button type="button" variant="outline" className="mt-2 h-8 px-2 text-xs" onClick={() => applyAlternativeTimeSlot(slot)}>
+                                    Use This Slot
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3">
+                          <p className="mb-2 text-sm font-semibold text-cyan-900">Recommended Similar Resources</p>
+                          {conflictResult.alternativeFacilities.length === 0 ? (
+                            <p className="text-xs text-cyan-800">No similar available resources found at this time.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {conflictResult.alternativeFacilities.map((facility) => (
+                                <div key={facility.id} className="rounded-md border border-cyan-200 bg-white p-2">
+                                  <p className="text-xs font-medium text-slate-900">{facility.name}</p>
+                                  <p className="text-xs text-slate-700">{optionLabel(facility.facilityType)} · {facility.location} · Capacity {facility.capacity}</p>
+                                  <Button type="button" variant="outline" className="mt-2 h-8 px-2 text-xs" onClick={() => applyAlternativeFacility(facility)}>
+                                    Use This Resource
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : conflictResult ? (

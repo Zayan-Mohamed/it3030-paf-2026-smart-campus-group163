@@ -11,6 +11,7 @@ import com.smartcampus.api.model.Facility;
 import com.smartcampus.api.model.Role;
 import com.smartcampus.api.model.User;
 import com.smartcampus.api.repository.BookingRepository;
+import com.smartcampus.api.repository.FacilityRepository;
 import com.smartcampus.api.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import com.smartcampus.api.event.BookingUpdatedEvent;
@@ -18,7 +19,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -29,8 +32,13 @@ public class BookingService {
     private static final EnumSet<Booking.BookingStatus> ACTIVE_CONFLICT_STATUSES = EnumSet.of(
             Booking.BookingStatus.PENDING,
             Booking.BookingStatus.APPROVED);
+    private static final int MAX_ALTERNATIVE_SLOTS = 5;
+    private static final int MAX_ALTERNATIVE_FACILITIES = 5;
+    private static final int SLOT_INCREMENT_MINUTES = 30;
+    private static final int SEARCH_DAYS_AHEAD = 7;
 
     private final BookingRepository bookingRepository;
+    private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
     private final FacilityService facilityService;
     private final ApplicationEventPublisher eventPublisher;
@@ -239,7 +247,7 @@ public class BookingService {
             LocalDateTime startTime,
             LocalDateTime endTime,
             Long excludeBookingId) {
-        facilityService.getFacilityEntity(facilityId);
+        Facility selectedFacility = facilityService.getFacilityEntity(facilityId);
         validateTimeRange(startTime, endTime);
 
         List<Booking> conflicts = bookingRepository.findConflictingBookings(
@@ -248,6 +256,13 @@ public class BookingService {
                 endTime,
                 ACTIVE_CONFLICT_STATUSES,
                 excludeBookingId);
+
+        List<BookingConflictResponse.AlternativeTimeSlot> alternativeTimeSlots = conflicts.isEmpty()
+            ? List.of()
+            : suggestAlternativeTimeSlots(selectedFacility, startTime, endTime, excludeBookingId);
+        List<BookingConflictResponse.AlternativeFacility> alternativeFacilities = conflicts.isEmpty()
+            ? List.of()
+            : suggestAlternativeFacilities(selectedFacility, startTime, endTime, excludeBookingId);
 
         return BookingConflictResponse.builder()
                 .hasConflict(!conflicts.isEmpty())
@@ -264,7 +279,101 @@ public class BookingService {
                                 .endTime(booking.getEndTime())
                                 .build())
                         .toList())
+                .alternativeTimeSlots(alternativeTimeSlots)
+                .alternativeFacilities(alternativeFacilities)
                 .build();
+    }
+
+    private List<BookingConflictResponse.AlternativeTimeSlot> suggestAlternativeTimeSlots(
+            Facility facility,
+            LocalDateTime requestedStart,
+            LocalDateTime requestedEnd,
+            Long excludeBookingId) {
+        Duration duration = Duration.between(requestedStart, requestedEnd);
+        if (duration.isZero() || duration.isNegative()) {
+            return List.of();
+        }
+
+        LocalDateTime lowerBound = requestedStart.plusMinutes(SLOT_INCREMENT_MINUTES);
+        LocalDateTime searchLimit = requestedStart.plusDays(SEARCH_DAYS_AHEAD);
+        LocalDateTime candidateStart = lowerBound;
+        List<BookingConflictResponse.AlternativeTimeSlot> suggestions = new java.util.ArrayList<>();
+
+        while (!candidateStart.isAfter(searchLimit) && suggestions.size() < MAX_ALTERNATIVE_SLOTS) {
+            LocalTime candidateTime = candidateStart.toLocalTime();
+            if (candidateTime.isBefore(facility.getAvailableFrom())) {
+                candidateStart = LocalDateTime.of(candidateStart.toLocalDate(), facility.getAvailableFrom());
+                continue;
+            }
+            if (candidateTime.isAfter(facility.getAvailableTo()) || candidateTime.equals(facility.getAvailableTo())) {
+                candidateStart = LocalDateTime.of(candidateStart.toLocalDate().plusDays(1), facility.getAvailableFrom());
+                continue;
+            }
+
+            LocalDateTime candidateEnd = candidateStart.plus(duration);
+            if (candidateEnd.toLocalDate().isAfter(candidateStart.toLocalDate())
+                    || candidateEnd.toLocalTime().isAfter(facility.getAvailableTo())) {
+                candidateStart = LocalDateTime.of(candidateStart.toLocalDate().plusDays(1), facility.getAvailableFrom());
+                continue;
+            }
+
+            if (isSlotAvailable(facility.getId(), candidateStart, candidateEnd, excludeBookingId)) {
+                suggestions.add(BookingConflictResponse.AlternativeTimeSlot.builder()
+                        .startTime(candidateStart)
+                        .endTime(candidateEnd)
+                        .build());
+            }
+
+            candidateStart = candidateStart.plusMinutes(SLOT_INCREMENT_MINUTES);
+        }
+
+        return suggestions;
+    }
+
+    private List<BookingConflictResponse.AlternativeFacility> suggestAlternativeFacilities(
+            Facility selectedFacility,
+            LocalDateTime requestedStart,
+            LocalDateTime requestedEnd,
+            Long excludeBookingId) {
+        return facilityRepository
+                .findByFacilityTypeAndStatus(selectedFacility.getFacilityType(), Facility.FacilityStatus.AVAILABLE)
+                .stream()
+                .filter(facility -> !facility.getId().equals(selectedFacility.getId()))
+                .filter(facility -> supportsTimeWindow(facility, requestedStart, requestedEnd))
+                .filter(facility -> isSlotAvailable(facility.getId(), requestedStart, requestedEnd, excludeBookingId))
+                .sorted((first, second) -> {
+                    boolean firstSameLocation = first.getLocation().equalsIgnoreCase(selectedFacility.getLocation());
+                    boolean secondSameLocation = second.getLocation().equalsIgnoreCase(selectedFacility.getLocation());
+                    if (firstSameLocation != secondSameLocation) {
+                        return firstSameLocation ? -1 : 1;
+                    }
+                    return first.getName().compareToIgnoreCase(second.getName());
+                })
+                .limit(MAX_ALTERNATIVE_FACILITIES)
+                .map(facility -> BookingConflictResponse.AlternativeFacility.builder()
+                        .id(facility.getId())
+                        .name(facility.getName())
+                        .status(facility.getStatus())
+                        .location(facility.getLocation())
+                        .facilityType(facility.getFacilityType().name())
+                        .capacity(facility.getCapacity())
+                        .build())
+                .toList();
+    }
+
+    private boolean supportsTimeWindow(Facility facility, LocalDateTime startTime, LocalDateTime endTime) {
+        LocalTime start = startTime.toLocalTime();
+        LocalTime end = endTime.toLocalTime();
+        return !start.isBefore(facility.getAvailableFrom()) && !end.isAfter(facility.getAvailableTo());
+    }
+
+    private boolean isSlotAvailable(Long facilityId, LocalDateTime startTime, LocalDateTime endTime, Long excludeBookingId) {
+        return bookingRepository.findConflictingBookings(
+                facilityId,
+                startTime,
+                endTime,
+                ACTIVE_CONFLICT_STATUSES,
+                excludeBookingId).isEmpty();
     }
 
     @Transactional(readOnly = true)
@@ -280,7 +389,7 @@ public class BookingService {
         }
 
         return bookingRepository.findCalendarBookings(facilityId, from, to).stream()
-                .filter(booking -> isPrivileged(currentUser) || booking.getUser().getId().equals(currentUser.getId()))
+            .filter(booking -> booking.getStatus() == Booking.BookingStatus.APPROVED)
                 .map(booking -> mapToResponse(booking, currentUser))
                 .toList();
     }

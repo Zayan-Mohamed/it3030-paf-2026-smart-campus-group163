@@ -86,10 +86,26 @@ export interface BookingConflict {
   endTime: string;
 }
 
+export interface BookingAlternativeTimeSlot {
+  startTime: string;
+  endTime: string;
+}
+
+export interface BookingAlternativeFacility {
+  id: number;
+  name: string;
+  status: FacilityStatus;
+  location: string;
+  facilityType: FacilityType;
+  capacity: number;
+}
+
 export interface BookingConflictResult {
   hasConflict: boolean;
   message: string;
   conflictingBookings: BookingConflict[];
+  alternativeTimeSlots: BookingAlternativeTimeSlot[];
+  alternativeFacilities: BookingAlternativeFacility[];
 }
 
 export type IncidentCategory =

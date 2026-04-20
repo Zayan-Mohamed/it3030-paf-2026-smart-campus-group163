@@ -34,7 +34,7 @@ function toIso(date: Date) {
 }
 
 export const BookingCalendarPage = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedFacility, setSelectedFacility] = useState<number | ''>('');
@@ -78,6 +78,8 @@ export const BookingCalendarPage = () => {
     date.setDate(weekStart.getDate() + index);
     return date;
   });
+
+  const approvedBookings = bookings.filter((booking) => booking.status === 'APPROVED');
 
   return (
     <div className="dashboard-layout">
@@ -161,7 +163,7 @@ export const BookingCalendarPage = () => {
               </Card>
             ) : (
               days.map((day) => {
-                const dayBookings = bookings.filter((booking) => {
+                const dayBookings = approvedBookings.filter((booking) => {
                   const bookingDate = new Date(booking.startTime);
                   return bookingDate.toDateString() === day.toDateString();
                 });
@@ -179,10 +181,27 @@ export const BookingCalendarPage = () => {
                         </div>
                       ) : (
                         dayBookings.map((booking) => (
-                          <Link key={booking.id} to={`/bookings/${booking.id}`} className="block rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-cyan-300 hover:bg-cyan-50/50">
-                            <p className="font-medium text-slate-900">{booking.facilityName}</p>
-                            <p className="mt-1 text-xs text-slate-600">{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</p>
-                            <p className="mt-1 text-xs text-slate-500">{booking.status}</p>
+                          <Link
+                            key={booking.id}
+                            to={`/bookings/${booking.id}`}
+                            className={`block rounded-lg border p-3 transition ${
+                              booking.userId === user?.id
+                                ? 'border-cyan-400 bg-cyan-50/70 hover:border-cyan-500 hover:bg-cyan-100'
+                                : 'border-slate-200 bg-slate-50 hover:border-cyan-300 hover:bg-cyan-50/50'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-medium text-slate-900">{booking.facilityName}</p>
+                                <p className="mt-1 text-xs text-slate-600">{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</p>
+                              </div>
+                              {booking.userId === user?.id && (
+                                <span className="rounded-full border border-cyan-200 bg-cyan-100 px-2 py-0.5 text-[11px] font-semibold text-cyan-800">
+                                  Your booking
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs text-slate-500">Approved</p>
                           </Link>
                         ))
                       )}
