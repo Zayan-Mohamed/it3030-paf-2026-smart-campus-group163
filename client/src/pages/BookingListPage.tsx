@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   CalendarDays,
+  Hourglass,
   Eye,
   Pencil,
   Plus,
   RefreshCw,
   Trash2,
-  XCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { bookingStatusClasses, bookingStatusLabel, cancelBooking, deleteBooking, formatDateTime, getBookings, getFacilities } from '../lib/bookings';
+import { bookingStatusClasses, bookingStatusLabel, deleteBooking, formatDateTime, getBookingCountdown, getBookings, getFacilities } from '../lib/bookings';
 import type { Booking, BookingStatus, Facility } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -59,12 +59,14 @@ export const BookingListPage = () => {
   const location = useLocation();
   const isStaffBookingRoute = location.pathname.startsWith('/dashboard/staff/bookings');
   const bookingBasePath = isStaffBookingRoute ? '/dashboard/staff/bookings' : '/bookings';
+  const bookingCalendarPath = isStaffBookingRoute ? '/dashboard/staff/bookings/calendar' : '/bookings/calendar';
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [statusFilter, setStatusFilter] = useState<BookingStatus | ''>('');
   const [facilityFilter, setFacilityFilter] = useState<number | ''>('');
   const [bookedDateFilter, setBookedDateFilter] = useState<string | ''>('');
   const [loading, setLoading] = useState(true);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,6 +98,11 @@ export const BookingListPage = () => {
     void loadData();
   }, [token, statusFilter, facilityFilter, bookedDateFilter, loadData]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 50);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const handleDelete = async (bookingId: number) => {
     if (!token || !window.confirm('Delete this booking request?')) {
       return;
@@ -107,22 +114,6 @@ export const BookingListPage = () => {
       await loadData();
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : 'Failed to delete booking.');
-    } finally {
-      setActionId(null);
-    }
-  };
-
-  const handleCancel = async (bookingId: number) => {
-    if (!token || !window.confirm('Cancel this booking?')) {
-      return;
-    }
-
-    try {
-      setActionId(bookingId);
-      await cancelBooking(token, bookingId);
-      await loadData();
-    } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : 'Failed to cancel booking.');
     } finally {
       setActionId(null);
     }
@@ -185,7 +176,7 @@ export const BookingListPage = () => {
               </h1>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link to="/bookings/calendar">
+              <Link to={bookingCalendarPath}>
                 <Button variant="outline">
                   <CalendarDays className="mr-2 h-4 w-4" />
                   Calendar
@@ -322,28 +313,44 @@ export const BookingListPage = () => {
                         )}
                       </div>
 
-                      <div className="flex flex-wrap gap-2 lg:w-72 lg:justify-end">
-                        <Link to={`/bookings/${booking.id}`}>
+                      <div className="flex flex-col gap-3 lg:w-72 lg:items-end">
+                        {booking.status === 'APPROVED' && (() => {
+                          const countdown = getBookingCountdown(booking.startTime, nowMs);
+                          if (!countdown) {
+                            return null;
+                          }
+
+                          return (
+                            <div className="w-full rounded-xl border border-red-300 bg-gradient-to-r from-red-50 via-rose-50 to-red-100 px-3 py-2 text-right text-red-800 shadow-sm shadow-red-200">
+                              <div className="flex items-center justify-end gap-2 text-xs font-bold uppercase tracking-wide text-red-700">
+                                <Hourglass className="h-4 w-4 animate-pulse" />
+                                Booking Countdown
+                              </div>
+                              <p className="mt-1 text-base font-extrabold tabular-nums text-red-900">
+                                {countdown.isUpcoming ? countdown.text : '00d 00h 00m 00000ms'}
+                              </p>
+                              <p className="mt-1 text-xs font-medium text-red-700">
+                                {countdown.isUpcoming ? 'Time is decreasing' : 'Booking start time reached'}
+                              </p>
+                            </div>
+                          );
+                        })()}
+
+                        <div className="flex flex-wrap gap-2 lg:justify-end">
+                        <Link to={`${bookingBasePath}/${booking.id}`}>
                           <Button variant="outline">
                             <Eye className="mr-2 h-4 w-4" />
                             Details
                           </Button>
                         </Link>
 
-                        {booking.canEdit && (
-                          <Link to={`/bookings/${booking.id}/edit`}>
+                        {booking.canEdit && booking.status !== 'REJECTED' && (
+                          <Link to={`${bookingBasePath}/${booking.id}/edit`}>
                             <Button variant="outline">
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </Button>
                           </Link>
-                        )}
-
-                        {booking.canCancel && booking.status === 'APPROVED' && (
-                          <Button type="button" variant="outline" onClick={() => void handleCancel(booking.id)} disabled={actionId === booking.id}>
-                            <XCircle className="mr-2 h-4 w-4" />
-                            {actionId === booking.id ? 'Cancelling...' : 'Cancel'}
-                          </Button>
                         )}
 
                         {booking.canDelete && (
@@ -352,6 +359,7 @@ export const BookingListPage = () => {
                             {actionId === booking.id ? 'Deleting...' : 'Delete'}
                           </Button>
                         )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>

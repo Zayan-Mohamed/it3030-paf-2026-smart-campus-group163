@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
   AlertCircle,
   ChevronLeft,
@@ -43,6 +44,9 @@ function toLocalDateKey(date: Date) {
 
 export const BookingCalendarPage = () => {
   const { token, user } = useAuth();
+  const location = useLocation();
+  const isStaffBookingRoute = location.pathname.startsWith('/dashboard/staff/bookings');
+  const bookingBasePath = isStaffBookingRoute ? '/dashboard/staff/bookings' : '/bookings';
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedFacility, setSelectedFacility] = useState<number | ''>('');
@@ -100,10 +104,10 @@ export const BookingCalendarPage = () => {
               <p className="mt-2 text-sm text-slate-600">Check weekly availability and review your existing bookings by date.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link to="/bookings">
+              <Link to={bookingBasePath}>
                 <Button variant="outline">Booking List</Button>
               </Link>
-              <Link to="/bookings/new">
+              <Link to={`${bookingBasePath}/new`}>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   New Booking
@@ -199,7 +203,7 @@ export const BookingCalendarPage = () => {
                         dayBookings.map((booking) => (
                           <Link
                             key={booking.id}
-                            to={`/bookings/${booking.id}`}
+                            to={`${bookingBasePath}/${booking.id}`}
                             className={`block rounded-lg border p-3 transition ${
                               booking.userId === user?.id
                                 ? 'border-cyan-400 bg-cyan-50/70 hover:border-cyan-500 hover:bg-cyan-100'
