@@ -28,9 +28,11 @@ import { FacilityList } from './pages/FacilityList';
 import { AddFacility } from './pages/AddFacility';
 import { EditFacility } from './pages/EditFacility';
 import { StaffFacilitiesPage } from './pages/StaffFacilitiesPage';
+import { CampusMap } from './pages/CampusMap';
 import { StudentFacilitiesPage } from './pages/StudentFacilitiesPage';
 import { MainLayout } from './layouts/MainLayout';
 import { UsersListPage } from './pages/UsersListPage';
+import { AuditLogsPage } from './pages/AuditLogsPage';
 import { StudentSettingsPage } from './pages/StudentSettingsPage';
 import CampusEventsPage from './pages/CampusEventsPage';
 import { AITester } from './components/ai/AITester';
@@ -113,6 +115,14 @@ ticket-flow
               <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'ADMIN']} />}>
                 <Route path="/dashboard/student" element={<StudentDashboard />} />
                 <Route path="/dashboard/student/facilities" element={<StudentFacilitiesPage />} />
+                <Route path="/map" element={
+                  <main className="flex flex-col h-[calc(100vh-64px)] w-full max-w-7xl mx-auto px-4 pt-6 pb-4 sm:px-6 lg:px-8 overflow-hidden">
+                    <h1 className="text-2xl font-bold text-slate-900 mb-4 shrink-0">Campus Map</h1>
+                    <div className="flex-1 min-h-0 w-full">
+                      <CampusMap />
+                    </div>
+                  </main>
+                } />
               </Route>
 
               <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
@@ -121,6 +131,11 @@ ticket-flow
                 <Route path="/admin/facilities" element={<FacilityList />} />
                 <Route path="/admin/facilities/new" element={<AddFacility />} />
                 <Route path="/admin/users" element={<UsersListPage />} />
+                <Route path="/admin/audit" element={
+                  <main className="flex flex-col h-[calc(100vh-64px)] w-full mx-auto overflow-hidden">
+                    <AuditLogsPage />
+                  </main>
+                } />
  ticket-flow
                 <Route path="/admin/incidents" element={
                   <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
