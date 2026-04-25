@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Clock3, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Clock3, MessageSquareText, Plus, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { Incident, IncidentPriority, IncidentStatus } from '../types';
 import { Badge } from '../components/ui/badge';
@@ -72,6 +73,7 @@ const priorityTabs: Array<{ key: PriorityFilter; label: string }> = [
 
 export const IncidentTicketsPage = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [activeFilter, setActiveFilter] = useState<IncidentFilter>('ALL');
   const [activePriorityFilter, setActivePriorityFilter] = useState<PriorityFilter>('ALL');
@@ -171,7 +173,13 @@ export const IncidentTicketsPage = () => {
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <Card className="border-slate-200/70 bg-white/85 shadow-xl shadow-slate-900/5 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">My Incident Tickets</CardTitle>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <CardTitle className="text-2xl">My Incident Tickets</CardTitle>
+            <Button onClick={() => navigate('/incidents/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Incident
+            </Button>
+          </div>
           <CardDescription>
             View only your raised tickets. Staff and admin updates are reflected live with color-coded status cards.
           </CardDescription>
