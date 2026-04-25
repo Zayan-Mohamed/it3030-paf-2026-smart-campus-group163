@@ -19,7 +19,7 @@ interface AuditLog {
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
 
 export const AuditLogsPage = () => {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, token } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +30,7 @@ export const AuditLogsPage = () => {
     if (!authLoading) {
       fetchLogs();
     }
-  }, [authLoading]);
+  }, [authLoading, token]);
 
   const fetchLogs = async () => {
     try {
@@ -38,7 +38,9 @@ export const AuditLogsPage = () => {
       setError(null);
 
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/audit`, {
-        credentials: 'include',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
       });
 
       if (response.status === 401) {
